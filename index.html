@@ -67,6 +67,18 @@
 
             <!-- 상단 툴바 액션 버튼 그룹 -->
             <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
+                <!-- 작업자 빠른 설정 및 선택 -->
+                <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 shadow-xs text-xs">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-600 mr-1.5"></i>
+                    <span class="text-[11px] font-bold text-slate-500 hidden sm:inline mr-1">현재 작업자:</span>
+                    <select id="global-worker-select" onchange="changeGlobalWorker(this.value)" 
+                        class="bg-transparent border-none text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                    </select>
+                </div>
+                <button type="button" onclick="openWorkerManagerModal()" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-blue-600/20">
+                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                    <span>작업자 등록/관리</span>
+                </button>
                 <button type="button" onclick="openWidgetManagerModal()" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
                     <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
                     <span>홈 작업창 설정</span>
@@ -1352,6 +1364,7 @@
                                 <th class="py-2.5 px-3 font-semibold">작업유형</th>
                                 <th class="py-2.5 px-3 font-semibold">품목코드</th>
                                 <th class="py-2.5 px-3 font-semibold">품목명</th>
+                                <th class="py-2.5 px-3 font-semibold">작업자</th>
                                 <th class="py-2.5 px-3 font-semibold">변동량</th>
                                 <th class="py-2.5 px-3 font-semibold">출발지 / 도착지</th>
                                 <th class="py-2.5 px-3 font-semibold">사유 / 비고</th>
@@ -1387,6 +1400,17 @@
                     <div class="flex gap-2">
                         <input type="number" id="action-input-qty" value="1" min="1" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <span id="action-unit-label" class="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center">EA</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">작업 담당자 (작업자) *</label>
+                    <div class="flex gap-2">
+                        <select id="action-select-worker" onchange="handleActionWorkerSelect(this.value)" class="flex-1 px-3 py-2 border border-slate-300 rounded-xl bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </select>
+                        <button type="button" onclick="openWorkerManagerModal()" class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl font-bold text-[11px] whitespace-nowrap" title="신규 작업자 등록">
+                            + 신규등록
+                        </button>
                     </div>
                 </div>
 
@@ -1647,6 +1671,61 @@
                     <button type="button" onclick="addLocation()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition">추가</button>
                 </div>
                 <div class="space-y-1 max-h-48 overflow-y-auto border border-slate-200 rounded-xl p-2" id="location-list-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모달: 작업자 등록 및 관리 -->
+    <div id="worker-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6">
+            <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4 text-blue-400"></i>
+                    <h4 class="font-bold text-sm">현장 작업자 등록 및 관리</h4>
+                </div>
+                <button type="button" onclick="closeWorkerManagerModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-4 text-xs">
+                <!-- 신규 작업자 등록 폼 -->
+                <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl space-y-3">
+                    <span class="font-bold text-blue-950 block text-[12px] flex items-center gap-1.5">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5 text-blue-600"></i>
+                        <span>신규 작업자 등록</span>
+                    </span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">작업자 이름 *</label>
+                            <input type="text" id="new-worker-name" placeholder="예: 김민수" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">사번 / 코드</label>
+                            <input type="text" id="new-worker-code" placeholder="예: EMP-005" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">소속 부서/팀</label>
+                            <input type="text" id="new-worker-dept" placeholder="예: 물류관리팀" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">직책 / 역할</label>
+                            <input type="text" id="new-worker-role" placeholder="예: 현장반장" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <button type="button" onclick="registerNewWorker()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        <span>작업자 등록하기</span>
+                    </button>
+                </div>
+
+                <!-- 등록된 작업자 명단 목록 -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-bold text-slate-700">등록된 작업자 명단 (<span id="worker-total-count">0</span>명)</span>
+                        <span class="text-[10px] text-slate-500">'선택' 클릭 시 현재 작업자로 즉시 지정</span>
+                    </div>
+                    <div id="worker-list-container" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1952,6 +2031,14 @@
         let categoriesDB = ["완제품", "원료", "부자재"];
         let locationsDB = ["김포공장 A동", "김포2공장 B동", "인천 물류센터", "화성 자재창고"];
 
+        /* 작업자 DB */
+        let workersDB = [
+            { id: "EMP-001", name: "홍길동", dept: "물류관리팀", role: "관리자" },
+            { id: "EMP-002", name: "김생산", dept: "생산조립2팀", role: "생산기사" },
+            { id: "EMP-003", name: "이물류", dept: "자재운영팀", role: "반장" },
+            { id: "EMP-004", name: "박품질", dept: "품질보증팀", role: "주임" }
+        ];
+
         /* 홈 대시보드 위젯 활성화 상태 */
         let homeWidgetsState = {
             "widget-scan-action": true,
@@ -1977,14 +2064,16 @@
             { category: "부자재", code: "ITEM-1004", name: "고무 실링 가스켓", supplier: "태양실링(주)", spec: "OD 45mm x ID 30mm", location: "김포공장 A동", quantity: 45, unit: "EA", status: "정상 보관", lastUpdated: "2026-09-20 09:10" }
         ];
 
+        let currentGlobalWorker = "홍길동 (관리자)";
+
         let historyDB = [
-            { id: 1, timestamp: "2026-09-20 14:30", type: "IN", code: "ITEM-1001", name: "스테인리스 육각볼트", qty: 80, fromLoc: "-", toLoc: "김포공장 A동", reason: "정기 구매 입고" },
-            { id: 2, timestamp: "2026-09-20 11:15", type: "USE", code: "ITEM-1002", name: "산업용 서보 모터", qty: 2, fromLoc: "김포2공장 B동", toLoc: "-", reason: "생산 2라인 긴급 조립 투입" },
-            { id: 3, timestamp: "2026-09-20 09:10", type: "MOVE", code: "ITEM-1004", name: "고무 실링 가스켓", qty: 25, fromLoc: "인천 물류센터", toLoc: "김포공장 A동", reason: "공장 간 재고 재배치" },
-            { id: 4, timestamp: "2026-09-18 10:00", type: "IN", code: "ITEM-1001", name: "스테인리스 육각볼트", qty: 100, fromLoc: "-", toLoc: "김포공장 A동", reason: "초기 재고 설정" },
-            { id: 5, timestamp: "2026-09-18 14:20", type: "IN", code: "ITEM-1002", name: "산업용 서보 모터", qty: 10, fromLoc: "-", toLoc: "김포2공장 B동", reason: "생산 완제 입고" },
-            { id: 6, timestamp: "2026-09-19 09:30", type: "IN", code: "ITEM-1003", name: "에폭시 수지 수지액", qty: 250, fromLoc: "-", toLoc: "화성 자재창고", reason: "원료 대량 입고" },
-            { id: 7, timestamp: "2026-09-19 15:00", type: "USE", code: "ITEM-1003", name: "에폭시 수지 수지액", qty: 10, fromLoc: "화성 자재창고", toLoc: "-", reason: "품질 검사 및 소성 테스트 사용" }
+            { id: 1, timestamp: "2026-09-20 14:30", type: "IN", code: "ITEM-1001", name: "스테인리스 육각볼트", qty: 80, worker: "홍길동 (관리자)", fromLoc: "-", toLoc: "김포공장 A동", reason: "정기 구매 입고" },
+            { id: 2, timestamp: "2026-09-20 11:15", type: "USE", code: "ITEM-1002", name: "산업용 서보 모터", qty: 2, worker: "김생산 기사", fromLoc: "김포2공장 B동", toLoc: "-", reason: "생산 2라인 긴급 조립 투입" },
+            { id: 3, timestamp: "2026-09-20 09:10", type: "MOVE", code: "ITEM-1004", name: "고무 실링 가스켓", qty: 25, worker: "이물류 반장", fromLoc: "인천 물류센터", toLoc: "김포공장 A동", reason: "공장 간 재고 재배치" },
+            { id: 4, timestamp: "2026-09-18 10:00", type: "IN", code: "ITEM-1001", name: "스테인리스 육각볼트", qty: 100, worker: "홍길동 (관리자)", fromLoc: "-", toLoc: "김포공장 A동", reason: "초기 재고 설정" },
+            { id: 5, timestamp: "2026-09-18 14:20", type: "IN", code: "ITEM-1002", name: "산업용 서보 모터", qty: 10, worker: "박품질 주임", fromLoc: "-", toLoc: "김포2공장 B동", reason: "생산 완제 입고" },
+            { id: 6, timestamp: "2026-09-19 09:30", type: "IN", code: "ITEM-1003", name: "에폭시 수지 수지액", qty: 250, worker: "홍길동 (관리자)", fromLoc: "-", toLoc: "화성 자재창고", reason: "원료 대량 입고" },
+            { id: 7, timestamp: "2026-09-19 15:00", type: "USE", code: "ITEM-1003", name: "에폭시 수지 수지액", qty: 10, worker: "최연구 선임", fromLoc: "화성 자재창고", toLoc: "-", reason: "품질 검사 및 소성 테스트 사용" }
         ];
 
         /* 예약 일정 DB */
@@ -2021,11 +2110,13 @@
             try {
                 localStorage.setItem('wms_categories', JSON.stringify(categoriesDB));
                 localStorage.setItem('wms_locations', JSON.stringify(locationsDB));
+                localStorage.setItem('wms_workers', JSON.stringify(workersDB));
                 localStorage.setItem('wms_master', JSON.stringify(masterDB));
                 localStorage.setItem('wms_inventory', JSON.stringify(inventoryDB));
                 localStorage.setItem('wms_history', JSON.stringify(historyDB));
                 localStorage.setItem('wms_schedules', JSON.stringify(schedulesDB));
                 localStorage.setItem('wms_home_widgets', JSON.stringify(homeWidgetsState));
+                localStorage.setItem('wms_global_worker', currentGlobalWorker);
             } catch (e) {
                 console.warn("Storage save failed:", e);
             }
@@ -2035,14 +2126,32 @@
             try {
                 const c = localStorage.getItem('wms_categories'); if (c) categoriesDB = JSON.parse(c);
                 const l = localStorage.getItem('wms_locations'); if (l) locationsDB = JSON.parse(l);
+                const wkr = localStorage.getItem('wms_workers'); if (wkr) workersDB = JSON.parse(wkr);
                 const m = localStorage.getItem('wms_master'); if (m) masterDB = JSON.parse(m);
                 const i = localStorage.getItem('wms_inventory'); if (i) inventoryDB = JSON.parse(i);
                 const h = localStorage.getItem('wms_history'); if (h) historyDB = JSON.parse(h);
                 const s = localStorage.getItem('wms_schedules'); if (s) schedulesDB = JSON.parse(s);
                 const w = localStorage.getItem('wms_home_widgets'); if (w) homeWidgetsState = Object.assign(homeWidgetsState, JSON.parse(w));
+                const gw = localStorage.getItem('wms_global_worker'); 
+                if (gw) {
+                    currentGlobalWorker = gw;
+                }
             } catch (e) {
                 console.warn("Storage load error:", e);
             }
+        }
+
+        function changeGlobalWorker(val) {
+            currentGlobalWorker = val.trim() || '작업자';
+            localStorage.setItem('wms_global_worker', currentGlobalWorker);
+            const slipWorker = document.getElementById('slip-worker-name');
+            if (slipWorker) slipWorker.innerText = currentGlobalWorker;
+            showToast(`현재 작업자가 [${currentGlobalWorker}]님으로 전환되었습니다.`, 'info');
+        }
+
+        function updateGlobalWorker(val) {
+            currentGlobalWorker = val.trim() || '작업자';
+            localStorage.setItem('wms_global_worker', currentGlobalWorker);
         }
 
         function showToast(message, type = "info") {
@@ -3800,6 +3909,12 @@
             document.getElementById('action-input-reason').value = "";
             document.getElementById('action-input-date').value = new Date().toISOString().split('T')[0];
 
+            populateWorkerSelects();
+            const workerSelect = document.getElementById('action-select-worker');
+            if (workerSelect) {
+                workerSelect.value = currentGlobalWorker;
+            }
+
             if (type === 'IN') {
                 title.innerText = "📥 자재 입고 처리";
                 header.className = "p-4 bg-emerald-600 text-white flex items-center justify-between";
@@ -3842,6 +3957,7 @@
             const reason = document.getElementById('action-input-reason')?.value.trim() || "정상 처리";
             const targetLoc = document.getElementById('action-target-location')?.value;
             const chosenDate = document.getElementById('action-input-date')?.value || new Date().toISOString().split('T')[0];
+            const worker = document.getElementById('action-select-worker')?.value.trim() || currentGlobalWorker || "작업자";
             const type = currentModalActionType;
 
             if (qty <= 0) {
@@ -3853,6 +3969,11 @@
                 showToast(`현재고(${currentActiveScannedItem.quantity})를 초과하여 처리할 수 없습니다.`, "warning");
                 return;
             }
+
+            // 작업자명 갱신 및 유지
+            currentGlobalWorker = worker;
+            const gwSelect = document.getElementById('global-worker-select');
+            if (gwSelect) gwSelect.value = worker;
 
             const nowTime = new Date().toTimeString().split(' ')[0].substring(0, 5);
             const timestamp = `${chosenDate} ${nowTime}`;
@@ -3902,6 +4023,7 @@
                 type: type,
                 code: currentActiveScannedItem.code,
                 name: currentActiveScannedItem.name,
+                worker: worker,
                 qty: qty,
                 fromLoc: fromLoc,
                 toLoc: toLoc,
@@ -3915,7 +4037,7 @@
             renderInventoryTable();
             renderHistoryTable();
 
-            showToast(`[${currentActiveScannedItem.name}] 작업 처리가 완료되었습니다.`, "success");
+            showToast(`[${currentActiveScannedItem.name}] 작업이 확정되었습니다. (작업자: ${worker})`, "success");
         }
 
         function openTransferSlipModal() {
@@ -3926,6 +4048,8 @@
             document.getElementById('slip-doc-date').innerText = today;
             document.getElementById('slip-from-loc').innerText = locationsDB[0] || '김포공장 A동';
             document.getElementById('slip-to-loc').innerText = locationsDB[1] || '김포2공장 B동';
+            const workerEl = document.getElementById('slip-worker-name');
+            if (workerEl) workerEl.innerText = currentGlobalWorker || '관리자 (WMS-ADMIN)';
 
             const tbody = document.getElementById('slip-items-tbody');
             const totalEl = document.getElementById('slip-total-qty');
@@ -3969,6 +4093,8 @@
             document.getElementById('slip-doc-date').innerText = today;
             document.getElementById('slip-from-loc').innerText = h.fromLoc;
             document.getElementById('slip-to-loc').innerText = h.toLoc;
+            const workerEl = document.getElementById('slip-worker-name');
+            if (workerEl) workerEl.innerText = h.worker || currentGlobalWorker || '관리자';
 
             const m = masterDB.find(item => item.code === h.code);
             const tbody = document.getElementById('slip-items-tbody');
@@ -4557,7 +4683,7 @@
             const filtered = historyDB.filter(h => !actionFilter || h.type === actionFilter);
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400">작업 이력이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-400">작업 이력이 없습니다.</td></tr>`;
                 return;
             }
 
@@ -4567,6 +4693,7 @@
                     <td class="py-2.5 px-3 font-bold">${getActionBadge(h.type)}</td>
                     <td class="py-2.5 px-3 font-mono font-bold text-slate-800">${h.code}</td>
                     <td class="py-2.5 px-3 font-bold text-slate-900">${h.name}</td>
+                    <td class="py-2.5 px-3 font-medium text-slate-700"><span class="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-md text-[11px] font-bold text-slate-800">${h.worker || '관리자'}</span></td>
                     <td class="py-2.5 px-3 font-mono font-bold ${h.type==='IN'?'text-emerald-600':h.type==='MOVE'?'text-amber-600':'text-rose-600'}">${h.type==='IN'?'+':'-'}${h.qty}</td>
                     <td class="py-2.5 px-3 text-slate-600 text-[11px]">${h.type==='MOVE' ? `${h.fromLoc} ➔ ${h.toLoc}` : (h.toLoc !== '-' ? h.toLoc : h.fromLoc)}</td>
                     <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate max-w-[150px]">${h.reason}</td>
@@ -4630,6 +4757,143 @@
         }
         function closeCategoryManagerModal() {
             document.getElementById('category-modal')?.classList.add('hidden');
+        }
+
+        /* ==================== 작업자 관리 로직 ==================== */
+        function openWorkerManagerModal() {
+            renderWorkerManagerList();
+            document.getElementById('worker-modal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeWorkerManagerModal() {
+            document.getElementById('worker-modal')?.classList.add('hidden');
+        }
+
+        function registerNewWorker() {
+            const name = document.getElementById('new-worker-name')?.value.trim();
+            const code = document.getElementById('new-worker-code')?.value.trim() || `EMP-00${workersDB.length + 1}`;
+            const dept = document.getElementById('new-worker-dept')?.value.trim() || '현장운영팀';
+            const role = document.getElementById('new-worker-role')?.value.trim() || '담당자';
+
+            if (!name) {
+                showToast("작업자 이름은 필수입니다.", "warning");
+                return;
+            }
+
+            const formattedName = `${name} (${role})`;
+            if (workersDB.some(w => w.name === name && w.dept === dept)) {
+                showToast("이미 등록된 작업자입니다.", "warning");
+                return;
+            }
+
+            workersDB.push({ id: code, name, dept, role });
+            currentGlobalWorker = formattedName;
+
+            // 입력창 비우기
+            document.getElementById('new-worker-name').value = '';
+            document.getElementById('new-worker-code').value = '';
+            document.getElementById('new-worker-dept').value = '';
+            document.getElementById('new-worker-role').value = '';
+
+            saveStateToStorage();
+            populateWorkerSelects();
+            renderWorkerManagerList();
+            showToast(`새 작업자 [${formattedName}] 등록이 완료되었습니다.`, 'success');
+        }
+
+        function selectActiveWorker(workerDisplay) {
+            currentGlobalWorker = workerDisplay;
+            localStorage.setItem('wms_global_worker', currentGlobalWorker);
+            populateWorkerSelects();
+            renderWorkerManagerList();
+            const slipWorker = document.getElementById('slip-worker-name');
+            if (slipWorker) slipWorker.innerText = currentGlobalWorker;
+            showToast(`현재 작업자가 [${currentGlobalWorker}]님으로 변경되었습니다.`, 'info');
+        }
+
+        function removeWorker(id) {
+            if (workersDB.length <= 1) {
+                showToast("최소 1명 이상의 작업자가 필요합니다.", "warning");
+                return;
+            }
+            const target = workersDB.find(w => w.id === id);
+            workersDB = workersDB.filter(w => w.id !== id);
+            saveStateToStorage();
+            populateWorkerSelects();
+            renderWorkerManagerList();
+            showToast(`작업자 [${target ? target.name : id}] 정보가 삭제되었습니다.`, 'info');
+        }
+
+        function renderWorkerManagerList() {
+            const container = document.getElementById('worker-list-container');
+            const countBadge = document.getElementById('worker-total-count');
+            if (!container) return;
+
+            if (countBadge) countBadge.innerText = workersDB.length;
+
+            if (workersDB.length === 0) {
+                container.innerHTML = `<div class="p-3 text-center text-slate-400 text-xs">등록된 작업자가 없습니다.</div>`;
+                return;
+            }
+
+            container.innerHTML = workersDB.map(w => {
+                const displayName = `${w.name} (${w.role || '담당'})`;
+                const isCurrent = currentGlobalWorker.startsWith(w.name);
+
+                return `
+                    <div class="p-2.5 rounded-xl border flex items-center justify-between transition ${isCurrent ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 border-slate-200'}">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg ${isCurrent ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-bold text-xs">
+                                ${w.name.charAt(0)}
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-slate-900">${w.name}</span>
+                                    <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${isCurrent ? 'bg-blue-200 text-blue-900' : 'bg-slate-200 text-slate-700'}">${w.role || '담당'}</span>
+                                    ${isCurrent ? `<span class="text-[9px] font-bold text-blue-600 bg-white border border-blue-200 px-1 rounded">현재선택</span>` : ''}
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-mono">${w.id} | ${w.dept || '팀 미지정'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="selectActiveWorker('${displayName}')" class="px-2 py-1 ${isCurrent ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-blue-50'} rounded-lg font-bold text-[11px] transition">
+                                ${isCurrent ? '선택됨' : '선택'}
+                            </button>
+                            <button type="button" onclick="removeWorker('${w.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded transition" title="작업자 삭제">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function populateWorkerSelects() {
+            const globalSelect = document.getElementById('global-worker-select');
+            const actionSelect = document.getElementById('action-select-worker');
+
+            const options = workersDB.map(w => {
+                const label = `${w.name} (${w.role || '담당'})`;
+                return `<option value="${label}">${label} [${w.dept || '팀'}]</option>`;
+            }).join('');
+
+            if (globalSelect) {
+                globalSelect.innerHTML = options;
+                if (!workersDB.some(w => currentGlobalWorker.startsWith(w.name))) {
+                    if (workersDB.length > 0) {
+                        currentGlobalWorker = `${workersDB[0].name} (${workersDB[0].role || '담당'})`;
+                    }
+                }
+                globalSelect.value = currentGlobalWorker;
+            }
+
+            if (actionSelect) {
+                actionSelect.innerHTML = options;
+                actionSelect.value = currentGlobalWorker;
+            }
         }
         function addCategory() {
             const val = document.getElementById('new-category-input')?.value.trim();
@@ -4990,6 +5254,7 @@
                 timestamp: new Date().toISOString(),
                 categories: categoriesDB,
                 locations: locationsDB,
+                workers: workersDB,
                 master: masterDB,
                 inventory: inventoryDB,
                 history: historyDB,
@@ -5030,6 +5295,7 @@
                     if (data.master && data.inventory) {
                         if (data.categories) categoriesDB = data.categories;
                         if (data.locations) locationsDB = data.locations;
+                        if (data.workers) workersDB = data.workers;
                         masterDB = data.master;
                         inventoryDB = data.inventory;
                         if (data.history) historyDB = data.history;
@@ -5038,6 +5304,7 @@
                         saveStateToStorage();
                         populateCategorySelects();
                         populateLocationSelects();
+                        populateWorkerSelects();
                         populateLedgerItemSelect();
                         renderMasterTable();
                         renderInventoryTable();
@@ -5082,6 +5349,7 @@
 
             populateCategorySelects();
             populateLocationSelects();
+            populateWorkerSelects();
             populateLedgerItemSelect();
 
             renderHomeDashboard();
