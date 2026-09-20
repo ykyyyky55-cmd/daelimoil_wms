@@ -1415,6 +1415,8 @@
         let transferSlipItems = [];
         let pendingRestoreData = null;
         let snapshotDB = [];
+        let availableCameras = [];
+        let selectedCameraId = null;
 
         function loadSavedState() {
             try {
@@ -1844,6 +1846,52 @@
             }
         }
 
+        /* --- 스마트폰 모바일 카메라 렌즈 감지 및 보안 상태 체크 --- */
+        async function checkCameraSecurityAndDevices() {
+            const noticeEl = document.getElementById('camera-security-notice');
+            const selectWrapper = document.getElementById('camera-select-wrapper');
+            const selectEl = document.getElementById('camera-device-select');
+
+            // HTTP 환경 진단: HTTPS가 아니거나 localhost가 아닌 경우 안내 표시
+            const isSecure = window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            if (!isSecure && noticeEl) {
+                noticeEl.classList.remove('hidden');
+            }
+
+            if (!window.Html5Qrcode || typeof Html5Qrcode.getCameras !== 'function') return;
+
+            try {
+                const cameras = await Html5Qrcode.getCameras();
+                if (cameras && cameras.length > 0) {
+                    availableCameras = cameras;
+                    if (selectWrapper && selectEl) {
+                        selectWrapper.classList.remove('hidden');
+                        let opts = '';
+                        cameras.forEach((cam, idx) => {
+                            const labelLower = (cam.label || '').toLowerCase();
+                            // 후면 카메라 우선 감지
+                            const isBack = labelLower.includes('back') || labelLower.includes('rear') || labelLower.includes('environment') || idx === cameras.length - 1;
+                            opts += `<option value="${cam.id}" ${isBack ? 'selected' : ''}>${cam.label || `카메라 ${idx + 1}`}</option>`;
+                        });
+                        selectEl.innerHTML = opts;
+                        selectedCameraId = selectEl.value;
+                    }
+                }
+            } catch (err) {
+                console.warn("카메라 장치 목록 조회:", err);
+            }
+            lucide.createIcons();
+        }
+
+        function onCameraDeviceChange(camId) {
+            selectedCameraId = camId;
+            if (isCameraActive) {
+                stopCamera().then(() => {
+                    startCamera();
+                });
+            }
+        }
+
         function startCamera() {
             if (!window.Html5Qrcode) {
                 showToast("QR 스캐너 라이브러리가 로드되지 않았습니다.", "error");
@@ -1852,53 +1900,138 @@
 
             const placeholder = document.getElementById('scanner-placeholder');
             const btnText = document.getElementById('camera-btn-text');
+            const toggleBtn = document.getElementById('camera-toggle-btn');
 
             try {
-                html5QrScanner = new Html5Qrcode("reader");
-                const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+                if (!html5QrScanner) {
+                    html5QrScanner = new Html5Qrcode("reader");
+                }
+
+                const qrboxFunction = function(viewfinderWidth, viewfinderHeight) {
+                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                    const qrboxSize = Math.floor(minEdge * 0.72);
+                    return { width: qrboxSize, height: qrboxSize };
+                };
+
+                const scanConfig = {
+                    fps: 15,
+                    qrbox: qrboxFunction,
+                    aspectRatio: 1.0,
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true
+                    }
+                };
+
+                const onScanSuccessCallback = (decodedText) => {
+                    // 모바일 스마트폰 햅틱 진동 피드백 (지원 기기)
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate(100); } catch(e){}
+                    }
+                    showToast("QR 코드 인식 성공!", "success");
+                    processScannedContent(decodedText);
+                };
+
+                // 1순위: 선택된 특정 카메라 ID 실행
+                // 2순위: environment (후면 카메라)
+                // 3순위: user (전면 카메라)
+                let cameraConstraint = selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: "environment" };
 
                 html5QrScanner.start(
-                    { facingMode: "environment" },
-                    config,
-                    (decodedText) => {
-                        showToast("QR 스캔 성공!", "success");
-                        processScannedContent(decodedText);
-                    },
-                    () => {
-                        // 프레임별 오류는 무시
-                    }
+                    cameraConstraint,
+                    scanConfig,
+                    onScanSuccessCallback,
+                    () => {} // 프레임별 오류 무시
                 ).then(() => {
                     isCameraActive = true;
                     if (placeholder) placeholder.classList.add('hidden');
                     if (btnText) btnText.innerText = "카메라 끄기";
-                    showToast("카메라가 활성화되었습니다. QR을 비춰주세요.", "info");
+                    if (toggleBtn) toggleBtn.className = "px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm";
+                    showToast("카메라가 켜졌습니다. QR 코드를 화면 중앙에 비춰주세요.", "info");
+                    checkCameraSecurityAndDevices();
                 }).catch(err => {
-                    console.warn("Camera start error:", err);
-                    showToast("카메라 접근 권한이 없거나 브라우저에서 차단되었습니다.", "warning");
+                    console.warn("1차 카메라 실행 실패, 완화된 조건으로 재시도:", err);
+                    
+                    // 스마트폰 렌즈 strict 오류 대비 (facingMode를 단순 문자열 또는 true로 완화)
+                    html5QrScanner.start(
+                        { facingMode: "user" },
+                        scanConfig,
+                        onScanSuccessCallback,
+                        () => {}
+                    ).then(() => {
+                        isCameraActive = true;
+                        if (placeholder) placeholder.classList.add('hidden');
+                        if (btnText) btnText.innerText = "카메라 끄기";
+                        if (toggleBtn) toggleBtn.className = "px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm";
+                        showToast("카메라가 활성화되었습니다.", "info");
+                    }).catch(finalErr => {
+                        console.error("카메라 최종 시작 오류:", finalErr);
+                        isCameraActive = false;
+                        const noticeEl = document.getElementById('camera-security-notice');
+                        if (noticeEl) noticeEl.classList.remove('hidden');
+                        showToast("실시간 카메라가 지원되지 않는 환경입니다. 아래 [사진으로 촬영] 버튼을 눌러 스캔하세요!", "warning");
+                    });
                 });
             } catch (e) {
                 console.error("Camera init error:", e);
-                showToast("카메라 시작 중 오류가 발생했습니다.", "error");
+                showToast("카메라 초기화 중 문제가 발생했습니다.", "error");
             }
         }
 
         function stopCamera() {
+            const placeholder = document.getElementById('scanner-placeholder');
+            const btnText = document.getElementById('camera-btn-text');
+            const toggleBtn = document.getElementById('camera-toggle-btn');
+
             if (html5QrScanner && isCameraActive) {
-                html5QrScanner.stop().then(() => {
-                    html5QrScanner.clear();
+                return html5QrScanner.stop().then(() => {
                     isCameraActive = false;
-                    const placeholder = document.getElementById('scanner-placeholder');
-                    const btnText = document.getElementById('camera-btn-text');
                     if (placeholder) placeholder.classList.remove('hidden');
                     if (btnText) btnText.innerText = "카메라 켜기";
+                    if (toggleBtn) toggleBtn.className = "px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm";
                 }).catch(err => {
-                    console.warn("Camera stop error:", err);
+                    console.warn("Camera stop warning:", err);
                     isCameraActive = false;
                 });
             } else {
                 isCameraActive = false;
-                const btnText = document.getElementById('camera-btn-text');
                 if (btnText) btnText.innerText = "카메라 켜기";
+                if (toggleBtn) toggleBtn.className = "px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm";
+                return Promise.resolve();
+            }
+        }
+
+        /* --- 스마트폰 카메라 사진 촬영 또는 갤러리 이미지 QR 파일 스캔 엔진 --- */
+        function handleImageFileScan(inputEl) {
+            const files = inputEl.files;
+            if (!files || files.length === 0) return;
+
+            const file = files[0];
+            showToast("촬영한 사진에서 QR 코드를 분석 중입니다...", "info");
+
+            const scannerInstance = html5QrScanner || new Html5Qrcode("reader");
+
+            // 실시간 비디오가 켜져 있다면 임시 중지 후 파일 디코드
+            const performScan = () => {
+                scannerInstance.scanFile(file, true)
+                    .then(decodedText => {
+                        if (navigator.vibrate) {
+                            try { navigator.vibrate(100); } catch(e){}
+                        }
+                        showToast("사진 속 QR 인식 성공!", "success");
+                        processScannedContent(decodedText);
+                        inputEl.value = ''; // 재촬영 가능하도록 초기화
+                    })
+                    .catch(err => {
+                        console.warn("파일 스캔 실패:", err);
+                        inputEl.value = '';
+                        showToast("사진에서 QR 코드를 찾지 못했습니다. 조금 더 가까이 정면에서 촬영해주세요.", "warning");
+                    });
+            };
+
+            if (isCameraActive) {
+                stopCamera().then(performScan);
+            } else {
+                performScan();
             }
         }
 
@@ -4098,6 +4231,7 @@
             renderInventoryTable();
             renderStockLedger();
             renderHistoryTable();
+            checkCameraSecurityAndDevices();
             lucide.createIcons();
 
             if (inventoryDB.length > 0) {
