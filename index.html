@@ -413,6 +413,7 @@
                                     <!-- QR 캔버스 컨테이너 -->
                                     <div class="bg-white p-1 rounded border border-slate-200 flex-shrink-0">
                                         <canvas id="label-qr-canvas" class="w-24 h-24"></canvas>
+                                        <div id="label-qr-fallback" class="w-24 h-24 hidden flex items-center justify-center"></div>
                                     </div>
                                     <!-- 라벨 텍스트 상세 -->
                                     <div class="flex-1 min-w-0 space-y-0.5 text-slate-900">
@@ -744,6 +745,7 @@
                         <div class="flex justify-center items-center py-1">
                             <div class="p-2.5 bg-white border-2 border-slate-900 rounded-xl shadow-inner">
                                 <canvas id="mobile-access-canvas" class="w-44 h-44"></canvas>
+                                <div id="mobile-qr-fallback" class="w-44 h-44 hidden flex items-center justify-center"></div>
                             </div>
                         </div>
 
@@ -1494,464 +1496,10 @@
             if (tabId === 'inventory') renderInventoryTable();
             if (tabId === 'ledger') renderStockLedger();
             if (tabId === 'history') renderHistoryTable();
-            if (tabId === 'create') updatePreviewLabel();
-
-            lucide.createIcons();
-        }
-
-        function toggleCamera() {
-            if (isCameraActive) stopCamera();
-            else startCamera();
-        }
-
-        function startCamera() {
-            const placeholder = document.getElementById('scanner-placeholder');
-            const btnText = document.getElementById('camera-btn-text');
-
-            if (!html5QrScanner) {
-                html5QrScanner = new Html5Qrcode("reader");
-            }
-            if (placeholder) placeholder.classList.add('hidden');
-
-            html5QrScanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 220, height: 220 } },
-                (decodedText) => {
-                    processScannedContent(decodedText);
-                    showToast("QR 코드가 성공적으로 인식되었습니다.", "success");
-                },
-                (errorMessage) => {}
-            ).then(() => {
-                isCameraActive = true;
-                if (btnText) btnText.innerText = "카메라 끄기";
-            }).catch(err => {
-                console.error("Camera start error:", err);
-                if (placeholder) placeholder.classList.remove('hidden');
-                showToast("카메라에 접근할 수 없습니다. 권한을 확인해주세요.", "error");
-                isCameraActive = false;
-                if (btnText) btnText.innerText = "카메라 켜기";
-            });
-        }
-
-        function stopCamera() {
-            const placeholder = document.getElementById('scanner-placeholder');
-            const btnText = document.getElementById('camera-btn-text');
-
-            if (html5QrScanner && isCameraActive) {
-                html5QrScanner.stop().then(() => {
-                    isCameraActive = false;
-                    if (btnText) btnText.innerText = "카메라 켜기";
-                    if (placeholder) placeholder.classList.remove('hidden');
-                }).catch(err => {
-                    console.error("Camera stop error:", err);
-                    isCameraActive = false;
-                    if (btnText) btnText.innerText = "카메라 켜기";
-                });
-            }
-        }
-
-        /* --- STREAMING_CHUNK:Implementing manual item name and barcode searching logic... --- */
-        function handleManualScan() {
-            const input = document.getElementById('manual-code-input');
-            if (!input) return;
-            const val = input.value.trim();
-            if (!val) {
-                showToast("품목명 또는 품목코드를 입력해주세요.", "warning");
-                return;
-            }
-
-            // 1. JSON 형태의 QR 문자열인 경우 기존 파서로 즉시 처리
-            if (val.startsWith('{') && val.endsWith('}')) {
-                processScannedContent(val);
-                closeSearchSuggestions();
-                input.value = '';
-                return;
-            }
-
-            // 2. 재고DB 및 마스터DB에서 품목코드 또는 품목명으로 검색
-            const query = val.toLowerCase();
-            const matchedItems = [];
-            const seenCodes = new Set();
-
-            // 실시간 재고 우선 탐색
-            inventoryDB.forEach(item => {
-                if (item.code.toLowerCase().includes(query) || item.name.toLowerCase().includes(query)) {
-                    matchedItems.push({ ...item, source: 'inventory' });
-                    seenCodes.add(item.code);
-                }
-            });
-
-            // 재고에 없지만 마스터에 등록된 품목 탐색
-            masterDB.forEach(m => {
-                if (!seenCodes.has(m.code) && (m.code.toLowerCase().includes(query) || m.name.toLowerCase().includes(query))) {
-                    matchedItems.push({
-                        code: m.code,
-                        name: m.name,
-                        category: m.category || '부자재',
-                        supplier: m.supplier,
-                        spec: m.spec,
-                        location: locationDB[0] || '미지정 거점',
-                        quantity: 0,
-                        unit: m.unit || 'EA',
-                        status: '정상보관',
-                        source: 'master'
-                    });
-                }
-            });
-
-            if (matchedItems.length === 0) {
-                showToast(`[${val}] 일치하는 품목명 또는 품목코드가 없습니다.`, "warning");
-                return;
-            }
-
-            // 단일 품목이 정확하게 검색되었을 경우 즉시 화면에 로드
-            if (matchedItems.length === 1) {
-                processScannedContent(matchedItems[0].code);
-                closeSearchSuggestions();
-                input.value = '';
-                showToast(`[${matchedItems[0].name}] 품목이 조회되었습니다.`, "success");
-            } else {
-                // 여러 품목이 검색된 경우 제안 목록 렌더링 후 사용자 선택 유도
-                renderSearchSuggestions(matchedItems, val);
-            }
-        }
-
-        /* 실시간 타이핑 시 품목명 자동완성 제안 */
-        function handleSearchSuggestions(rawVal) {
-            const query = (rawVal || '').trim().toLowerCase();
-            const box = document.getElementById('search-suggestion-box');
-            const clearBtn = document.getElementById('clear-search-btn');
-            if (!box) return;
-
-            if (clearBtn) {
-                if (rawVal && rawVal.length > 0) clearBtn.classList.remove('hidden');
-                else clearBtn.classList.add('hidden');
-            }
-
-            // 검색어가 비어있을 때는 등록된 품목 상위 5개를 안내 형태로 추천
-            if (!query) {
-                const recentItems = masterDB.slice(0, 5);
-                if (recentItems.length > 0) {
-                    box.innerHTML = `
-                        <div class="flex items-center justify-between px-2 pb-1.5 text-[11px] font-bold text-slate-500 border-b border-slate-100">
-                            <span>💡 전체 등록 품목 (클릭 시 즉시 선택)</span>
-                            <button onclick="closeSearchSuggestions()" class="text-slate-400 hover:text-slate-600 text-[10px]">닫기 ✕</button>
-                        </div>
-                        <div class="space-y-1 pt-1">
-                            ${recentItems.map(m => {
-                                const curStock = inventoryDB.filter(i => i.code === m.code).reduce((sum, c) => sum + c.quantity, 0);
-                                return `
-                                    <div onclick="selectSuggestedItem('${m.code}')" class="flex items-center justify-between p-2 hover:bg-blue-50 border border-transparent hover:border-blue-200 rounded-xl cursor-pointer transition">
-                                        <div class="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                                            ${getCategoryBadgeHtml(m.category)}
-                                            <div class="truncate">
-                                                <span class="font-bold text-slate-800 text-xs">${m.name}</span>
-                                                <span class="font-mono text-[11px] text-slate-400 ml-1">(${m.code})</span>
-                                                <div class="text-[10px] text-slate-400 truncate">${m.spec || '-'} | ${m.supplier || '-'}</div>
-                                            </div>
-                                        </div>
-                                        <div class="text-right flex-shrink-0">
-                                            <span class="text-xs font-mono font-bold text-slate-700">${curStock.toLocaleString()} ${m.unit || 'EA'}</span>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `;
-                    box.classList.remove('hidden');
-                    lucide.createIcons();
-                } else {
-                    box.classList.add('hidden');
-                }
-                return;
-            }
-
-            // 품목명 또는 품목코드에 입력 키워드가 포함된 품목 탐색
-            const matches = [];
-            const seenCodes = new Set();
-
-            inventoryDB.forEach(item => {
-                if (item.name.toLowerCase().includes(query) || item.code.toLowerCase().includes(query) || (item.spec && item.spec.toLowerCase().includes(query))) {
-                    matches.push({ ...item, isInventory: true });
-                    seenCodes.add(item.code);
-                }
-            });
-
-            masterDB.forEach(m => {
-                if (!seenCodes.has(m.code) && (m.name.toLowerCase().includes(query) || m.code.toLowerCase().includes(query) || (m.spec && m.spec.toLowerCase().includes(query)))) {
-                    matches.push({
-                        code: m.code,
-                        name: m.name,
-                        category: m.category || '부자재',
-                        supplier: m.supplier,
-                        spec: m.spec,
-                        location: locationDB[0] || '미지정 거점',
-                        quantity: 0,
-                        unit: m.unit || 'EA',
-                        isInventory: false
-                    });
-                }
-            });
-
-            if (matches.length > 0) {
-                renderSearchSuggestions(matches, query);
-            } else {
-                box.innerHTML = `
-                    <div class="p-4 text-center text-xs text-slate-500">
-                        <i data-lucide="search-x" class="w-6 h-6 mx-auto text-slate-300 mb-1"></i>
-                        <p class="font-bold text-slate-700">[${rawVal}] 일치하는 품목이 없습니다.</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">품목 마스터 탭에서 새 품목을 등록해주세요.</p>
-                    </div>
-                `;
-                box.classList.remove('hidden');
-                lucide.createIcons();
-            }
-        }
-
-        /* --- STREAMING_CHUNK:Highlighting matching keywords and handling keyboard navigation... --- */
-        function highlightMatch(text, query) {
-            if (!text || !query) return text || '';
-            const idx = text.toLowerCase().indexOf(query.toLowerCase());
-            if (idx === -1) return text;
-            const before = text.substring(0, idx);
-            const match = text.substring(idx, idx + query.length);
-            const after = text.substring(idx + query.length);
-            return `${before}<mark class="bg-amber-200 text-amber-900 font-black rounded px-0.5">${match}</mark>${after}`;
-        }
-
-        function renderSearchSuggestions(items, query) {
-            const box = document.getElementById('search-suggestion-box');
-            if (!box) return;
-
-            box.innerHTML = `
-                <div class="flex items-center justify-between px-2 pb-1.5 text-[11px] font-bold text-slate-500 border-b border-slate-100">
-                    <span>검색 일치 품목: <strong class="text-blue-600">${items.length}건</strong> (원하는 품목을 클릭하세요)</span>
-                    <button onclick="closeSearchSuggestions()" class="text-slate-400 hover:text-slate-600 text-[10px]">닫기 ✕</button>
-                </div>
-                <div class="space-y-1 pt-1">
-                    ${items.slice(0, 8).map(item => `
-                        <div onclick="selectSuggestedItem('${item.code}')" class="flex items-center justify-between p-2.5 bg-slate-50/70 hover:bg-blue-50 border border-slate-200/80 hover:border-blue-400 rounded-xl cursor-pointer transition group shadow-sm">
-                            <div class="min-w-0 flex-1 pr-3">
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    ${getCategoryBadgeHtml(item.category)}
-                                    <span class="font-black text-slate-900 text-xs group-hover:text-blue-700 transition">
-                                        ${highlightMatch(item.name, query)}
-                                    </span>
-                                    <span class="font-mono text-[10px] text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                                        ${highlightMatch(item.code, query)}
-                                    </span>
-                                </div>
-                                <div class="text-[11px] text-slate-500 mt-1 flex items-center gap-2 truncate">
-                                    <span>규격: <strong>${highlightMatch(item.spec, query) || '-'}</strong></span>
-                                    <span>•</span>
-                                    <span>제조원: <strong>${item.supplier || '-'}</strong></span>
-                                </div>
-                            </div>
-                            <div class="text-right flex-shrink-0 flex flex-col items-end">
-                                <span class="font-mono font-black text-xs ${item.quantity > 0 ? 'text-emerald-700' : 'text-slate-400'}">
-                                    ${item.quantity.toLocaleString()} <span class="text-[10px] font-bold">${item.unit || 'EA'}</span>
-                                </span>
-                                <span class="text-[10px] px-1.5 py-0.5 mt-1 rounded-md bg-white border border-slate-200 text-slate-600 font-semibold flex items-center gap-0.5">
-                                    <i data-lucide="map-pin" class="w-2.5 h-2.5 text-blue-500"></i>
-                                    ${item.location || '거점미지정'}
-                                </span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            box.classList.remove('hidden');
-            lucide.createIcons();
-        }
-
-        function selectSuggestedItem(code) {
-            processScannedContent(code);
-            closeSearchSuggestions();
-            const input = document.getElementById('manual-code-input');
-            const clearBtn = document.getElementById('clear-search-btn');
-            if (input) input.value = '';
-            if (clearBtn) clearBtn.classList.add('hidden');
-            showToast(`[${code}] 품목이 선택되었습니다.`, "info");
-        }
-
-        function clearSearchInput() {
-            const input = document.getElementById('manual-code-input');
-            const clearBtn = document.getElementById('clear-search-btn');
-            if (input) {
-                input.value = '';
-                input.focus();
-            }
-            if (clearBtn) clearBtn.classList.add('hidden');
-            closeSearchSuggestions();
-        }
-
-        function handleSearchKeyNav(e) {
-            if (e.key === 'Enter') {
-                handleManualScan();
-            } else if (e.key === 'Escape') {
-                closeSearchSuggestions();
-            }
-        }
-
-        function closeSearchSuggestions() {
-            const box = document.getElementById('search-suggestion-box');
-            if (box) box.classList.add('hidden');
-        }
-
-        document.addEventListener('click', function (e) {
-            const box = document.getElementById('search-suggestion-box');
-            const input = document.getElementById('manual-code-input');
-            if (box && !box.contains(e.target) && e.target !== input) {
-                box.classList.add('hidden');
-            }
-        });
-
-        /* --- STREAMING_CHUNK:Processing scanned QR payload and updating item view... --- */
-        function processScannedContent(rawInput) {
-            if (!rawInput) return;
-            let code = '', name = '', category = '', supplier = '', spec = '';
-
-            let parsed = null;
-            try {
-                parsed = JSON.parse(rawInput);
-            } catch (e) {}
-
-            if (parsed && typeof parsed === 'object') {
-                code = (parsed.code || parsed.id || '').trim().toUpperCase();
-                name = parsed.name || '';
-                category = parsed.category || '';
-                supplier = parsed.supplier || '';
-                spec = parsed.spec || '';
-            } else {
-                const query = String(rawInput).trim();
-                let matched = inventoryDB.find(i => i.code.toUpperCase() === query.toUpperCase()) ||
-                              masterDB.find(m => m.code.toUpperCase() === query.toUpperCase());
-                
-                if (!matched) {
-                    matched = inventoryDB.find(i => i.name.toLowerCase() === query.toLowerCase()) ||
-                              masterDB.find(m => m.name.toLowerCase() === query.toLowerCase());
-                }
-
-                if (matched) {
-                    code = matched.code;
-                    name = matched.name;
-                    category = matched.category;
-                    supplier = matched.supplier;
-                    spec = matched.spec;
-                } else {
-                    code = query.toUpperCase();
-                }
-            }
-
-            if (!code) {
-                showToast("유효한 품목코드를 찾을 수 없습니다.", "error");
-                return;
-            }
-
-            let item = inventoryDB.find(i => i.code === code);
-
-            if (!item) {
-                const master = masterDB.find(m => m.code === code);
-                if (master) {
-                    item = {
-                        code: master.code,
-                        name: master.name,
-                        category: master.category || '부자재',
-                        supplier: master.supplier,
-                        spec: master.spec,
-                        location: locationDB[0] || '김포공장 A동',
-                        quantity: 0,
-                        unit: master.unit || 'EA',
-                        status: '정상보관',
-                        lastUpdated: new Date().toLocaleString()
-                    };
-                    inventoryDB.push(item);
-                    persistState();
-                } else if (name) {
-                    const finalCat = category || categoryDB[0] || '부자재';
-                    masterDB.push({
-                        code: code,
-                        name: name,
-                        category: finalCat,
-                        supplier: supplier || '미지정 거래처',
-                        spec: spec || '-',
-                        unit: 'EA',
-                        safetyStock: 20,
-                        memo: 'QR 스캔 자동등록'
-                    });
-                    item = {
-                        code: code,
-                        name: name,
-                        category: finalCat,
-                        supplier: supplier || '미지정 거래처',
-                        spec: spec || '-',
-                        location: locationDB[0] || '김포공장 A동',
-                        quantity: 0,
-                        unit: 'EA',
-                        status: '정상보관',
-                        lastUpdated: new Date().toLocaleString()
-                    };
-                    inventoryDB.push(item);
-                    persistState();
-                    populateQuickMasterSelect();
-                    renderMasterTable();
-                } else {
-                    showToast(`[${code}] 등록되지 않은 품목입니다. 마스터 등록 후 이용해주세요.`, "warning");
-                    return;
-                }
-            }
-
-            currentScannedItem = item;
-            renderScannedDetailView(item);
-        }
-
-        function renderScannedDetailView(item) {
-            if (!item) return;
-
-            document.getElementById('view-code').innerText = item.code;
-            document.getElementById('view-name').innerText = item.name;
-            document.getElementById('view-category-badge').innerHTML = getCategoryBadgeHtml(item.category || '부자재');
-            document.getElementById('view-supplier').innerText = item.supplier || '-';
-            document.getElementById('view-spec').innerText = item.spec || '-';
-            document.getElementById('view-location').innerHTML = `<i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-500"></i> <span>${item.location}</span>`;
-            document.getElementById('view-quantity').innerText = item.quantity.toLocaleString();
-            document.getElementById('view-unit').innerText = item.unit || 'EA';
-
-            const badge = document.getElementById('scanned-status-badge');
-            if (badge) {
-                if (item.quantity <= 0) {
-                    badge.className = "px-2.5 py-1 text-xs font-bold rounded-full bg-rose-100 text-rose-700";
-                    badge.innerText = "재고 없음 (0 EA)";
-                } else if (item.quantity < 20) {
-                    badge.className = "px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-700";
-                    badge.innerText = "안전재고 부족 경고";
-                } else {
-                    badge.className = "px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700";
-                    badge.innerText = "정상 보관중";
-                }
-            }
-
-            const miniHistContainer = document.getElementById('item-history-mini');
-            if (miniHistContainer) {
-                const itemLogs = historyDB.filter(h => h.code === item.code).slice(-3).reverse();
-                if (itemLogs.length === 0) {
-                    miniHistContainer.innerHTML = `<div class="p-2 bg-slate-50 rounded text-center text-slate-400">조회된 최근 이력이 없습니다.</div>`;
-                } else {
-                    miniHistContainer.innerHTML = itemLogs.map(log => `
-                        <div class="flex items-center justify-between p-1.5 bg-slate-50 rounded border border-slate-100 text-[11px]">
-                            <div class="flex items-center gap-1.5">
-                                <span class="px-1.5 py-0.5 rounded font-bold text-[9px] ${getActionBadgeColor(log.action)}">
-                                    ${getActionKorean(log.action)}
-                                </span>
-                                <span class="text-slate-700 font-medium">${log.timestamp.split(' ')[0]}</span>
-                                <span class="text-slate-500">(${log.fromLoc} &rarr; ${log.toLoc})</span>
-                            </div>
-                            <div class="font-mono font-bold text-slate-800">
-                                ${log.action === 'RECEIVE' ? '+' : '-'}${log.qty}
-                            </div>
-                        </div>
-                    `).join('');
-                }
+            if (tabId === 'create') {
+                setTimeout(() => {
+                    updatePreviewLabel();
+                }, 50);
             }
 
             lucide.createIcons();
@@ -2106,6 +1654,381 @@
             switchTab('scan');
         }
 
+        function renderScannedDetailView(item) {
+            if (!item) return;
+            currentScannedItem = item;
+
+            const catBadge = document.getElementById('view-category-badge');
+            if (catBadge) catBadge.innerHTML = getCategoryBadgeHtml(item.category);
+
+            const statusBadge = document.getElementById('scanned-status-badge');
+            if (statusBadge) {
+                statusBadge.className = "px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-1";
+                statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 스캔 완료`;
+            }
+
+            const codeEl = document.getElementById('view-code');
+            if (codeEl) codeEl.innerText = item.code || '-';
+
+            const nameEl = document.getElementById('view-name');
+            if (nameEl) nameEl.innerText = item.name || '-';
+
+            const supplierEl = document.getElementById('view-supplier');
+            if (supplierEl) supplierEl.innerText = item.supplier || '-';
+
+            const specEl = document.getElementById('view-spec');
+            if (specEl) specEl.innerText = item.spec || '-';
+
+            const locEl = document.getElementById('view-location');
+            if (locEl) {
+                locEl.innerHTML = `<i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-500"></i> <span>${item.location || '미지정'}</span>`;
+            }
+
+            const qtyEl = document.getElementById('view-quantity');
+            if (qtyEl) qtyEl.innerText = Number(item.quantity || 0).toLocaleString();
+
+            const unitEl = document.getElementById('view-unit');
+            if (unitEl) unitEl.innerText = item.unit || 'EA';
+
+            // 품목 최근 이력 미니뷰 갱신
+            const miniHist = document.getElementById('item-history-mini');
+            if (miniHist) {
+                const itemLogs = historyDB.filter(h => h.code === item.code).slice(-3).reverse();
+                if (itemLogs.length === 0) {
+                    miniHist.innerHTML = `<div class="p-2 bg-slate-50 rounded text-center text-slate-400">조회된 최근 이력이 없습니다.</div>`;
+                } else {
+                    miniHist.innerHTML = itemLogs.map(l => `
+                        <div class="flex items-center justify-between p-1.5 bg-slate-50 rounded border border-slate-100 text-[11px]">
+                            <div class="flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${getActionBadgeColor(l.action)}">${getActionKorean(l.action)}</span>
+                                <span class="text-slate-500 font-mono">${l.timestamp.split(' ')[1] || l.timestamp}</span>
+                                <span class="text-slate-700">${l.fromLoc} &rarr; ${l.toLoc}</span>
+                            </div>
+                            <span class="font-bold font-mono ${l.action === 'RECEIVE' ? 'text-emerald-700' : 'text-rose-600'}">
+                                ${l.action === 'RECEIVE' ? '+' : '-'}${l.qty}
+                            </span>
+                        </div>
+                    `).join('');
+                }
+            }
+            lucide.createIcons();
+        }
+
+        function processScannedContent(rawInput) {
+            if (!rawInput || !String(rawInput).trim()) {
+                showToast("스캔하거나 입력할 품목 데이터가 없습니다.", "warning");
+                return;
+            }
+
+            const text = String(rawInput).trim();
+            let targetCode = text;
+            let qrData = null;
+
+            // 1. JSON 형태의 QR 페이로드 파싱
+            if (text.startsWith('{') && text.endsWith('}')) {
+                try {
+                    qrData = JSON.parse(text);
+                    if (qrData.code) targetCode = qrData.code.trim();
+                } catch (e) {
+                    console.warn("JSON parse fallback:", e);
+                }
+            }
+
+            targetCode = targetCode.toUpperCase();
+
+            // 2. 실시간 재고(inventoryDB)에서 우선 조회
+            let found = inventoryDB.find(i => i.code.toUpperCase() === targetCode);
+
+            // 3. 재고에 없으면 마스터(masterDB)에서 조회 후 가상 재고 항목 생성
+            if (!found) {
+                const master = masterDB.find(m => m.code.toUpperCase() === targetCode);
+                if (master) {
+                    found = {
+                        code: master.code,
+                        name: master.name,
+                        category: master.category || '부자재',
+                        supplier: master.supplier,
+                        spec: master.spec,
+                        location: locationDB[0] || '김포공장 A동',
+                        quantity: 0,
+                        unit: master.unit || 'EA',
+                        status: '재고없음',
+                        lastUpdated: formatDateTime(new Date())
+                    };
+                    inventoryDB.push(found);
+                    persistState();
+                    renderInventoryTable();
+                }
+            }
+
+            // 4. 코드로 검색되지 않은 경우 품목명 부분 일치 검색
+            if (!found) {
+                const queryLower = text.toLowerCase();
+                found = inventoryDB.find(i => i.name.toLowerCase().includes(queryLower));
+                if (!found) {
+                    const masterByName = masterDB.find(m => m.name.toLowerCase().includes(queryLower));
+                    if (masterByName) {
+                        found = {
+                            code: masterByName.code,
+                            name: masterByName.name,
+                            category: masterByName.category || '부자재',
+                            supplier: masterByName.supplier,
+                            spec: masterByName.spec,
+                            location: locationDB[0] || '김포공장 A동',
+                            quantity: 0,
+                            unit: masterByName.unit || 'EA',
+                            status: '재고없음',
+                            lastUpdated: formatDateTime(new Date())
+                        };
+                        inventoryDB.push(found);
+                        persistState();
+                        renderInventoryTable();
+                    }
+                }
+            }
+
+            // 5. 외부에서 새로 유입된 신규 JSON QR일 경우 자동 마스터 & 재고 등록
+            if (!found && qrData && qrData.code && qrData.name) {
+                const newCat = qrData.category || '부자재';
+                if (!categoryDB.includes(newCat)) {
+                    categoryDB.push(newCat);
+                    populateCategorySelects();
+                }
+                const newMaster = {
+                    code: qrData.code.toUpperCase(),
+                    name: qrData.name,
+                    category: newCat,
+                    supplier: qrData.supplier || '외부거래처',
+                    spec: qrData.spec || '-',
+                    unit: qrData.unit || 'EA',
+                    safetyStock: 20,
+                    memo: 'QR 스캔 자동생성'
+                };
+                masterDB.push(newMaster);
+                found = {
+                    code: newMaster.code,
+                    name: newMaster.name,
+                    category: newMaster.category,
+                    supplier: newMaster.supplier,
+                    spec: newMaster.spec,
+                    location: locationDB[0] || '김포공장 A동',
+                    quantity: 0,
+                    unit: newMaster.unit,
+                    status: '재고없음',
+                    lastUpdated: formatDateTime(new Date())
+                };
+                inventoryDB.push(found);
+                persistState();
+                populateQuickMasterSelect();
+                renderMasterTable();
+                renderInventoryTable();
+                showToast(`[${found.code}] 신규 QR 품목이 자동 등록되었습니다.`, "success");
+            }
+
+            if (found) {
+                renderScannedDetailView(found);
+                const searchInput = document.getElementById('manual-code-input');
+                if (searchInput) searchInput.value = found.code;
+                const suggestBox = document.getElementById('search-suggestion-box');
+                if (suggestBox) suggestBox.classList.add('hidden');
+            } else {
+                showToast(`'${text}'에 일치하는 품목을 찾을 수 없습니다.`, "error");
+            }
+        }
+
+        function toggleCamera() {
+            if (isCameraActive) {
+                stopCamera();
+            } else {
+                startCamera();
+            }
+        }
+
+        function startCamera() {
+            if (!window.Html5Qrcode) {
+                showToast("QR 스캐너 라이브러리가 로드되지 않았습니다.", "error");
+                return;
+            }
+
+            const placeholder = document.getElementById('scanner-placeholder');
+            const btnText = document.getElementById('camera-btn-text');
+
+            try {
+                html5QrScanner = new Html5Qrcode("reader");
+                const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+                html5QrScanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    (decodedText) => {
+                        showToast("QR 스캔 성공!", "success");
+                        processScannedContent(decodedText);
+                    },
+                    () => {
+                        // 프레임별 오류는 무시
+                    }
+                ).then(() => {
+                    isCameraActive = true;
+                    if (placeholder) placeholder.classList.add('hidden');
+                    if (btnText) btnText.innerText = "카메라 끄기";
+                    showToast("카메라가 활성화되었습니다. QR을 비춰주세요.", "info");
+                }).catch(err => {
+                    console.warn("Camera start error:", err);
+                    showToast("카메라 접근 권한이 없거나 브라우저에서 차단되었습니다.", "warning");
+                });
+            } catch (e) {
+                console.error("Camera init error:", e);
+                showToast("카메라 시작 중 오류가 발생했습니다.", "error");
+            }
+        }
+
+        function stopCamera() {
+            if (html5QrScanner && isCameraActive) {
+                html5QrScanner.stop().then(() => {
+                    html5QrScanner.clear();
+                    isCameraActive = false;
+                    const placeholder = document.getElementById('scanner-placeholder');
+                    const btnText = document.getElementById('camera-btn-text');
+                    if (placeholder) placeholder.classList.remove('hidden');
+                    if (btnText) btnText.innerText = "카메라 켜기";
+                }).catch(err => {
+                    console.warn("Camera stop error:", err);
+                    isCameraActive = false;
+                });
+            } else {
+                isCameraActive = false;
+                const btnText = document.getElementById('camera-btn-text');
+                if (btnText) btnText.innerText = "카메라 켜기";
+            }
+        }
+
+        function handleManualScan() {
+            const input = document.getElementById('manual-code-input');
+            const val = input ? input.value.trim() : '';
+            if (!val) {
+                showToast("품목명 또는 코드를 입력해주세요.", "warning");
+                return;
+            }
+            processScannedContent(val);
+        }
+
+        function clearSearchInput() {
+            const input = document.getElementById('manual-code-input');
+            if (input) input.value = '';
+            const clearBtn = document.getElementById('clear-search-btn');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            const box = document.getElementById('search-suggestion-box');
+            if (box) box.classList.add('hidden');
+        }
+
+        function highlightMatch(text, query) {
+            if (!query || !text) return text || '';
+            const reg = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return String(text).replace(reg, '<mark class="bg-yellow-200 text-slate-900 rounded px-0.5 font-bold">$1</mark>');
+        }
+
+        function handleSearchSuggestions(rawVal) {
+            const box = document.getElementById('search-suggestion-box');
+            const clearBtn = document.getElementById('clear-search-btn');
+            if (!box) return;
+
+            const query = (rawVal || '').trim();
+            if (clearBtn) {
+                if (query) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+
+            const combinedMap = new Map();
+            inventoryDB.forEach(inv => {
+                combinedMap.set(inv.code, { ...inv });
+            });
+            masterDB.forEach(m => {
+                if (!combinedMap.has(m.code)) {
+                    combinedMap.set(m.code, {
+                        code: m.code,
+                        name: m.name,
+                        category: m.category || '부자재',
+                        supplier: m.supplier,
+                        spec: m.spec,
+                        location: '미보관',
+                        quantity: 0,
+                        unit: m.unit || 'EA'
+                    });
+                }
+            });
+
+            const allItems = Array.from(combinedMap.values());
+            let matches = [];
+
+            if (!query) {
+                matches = allItems.slice(0, 5);
+            } else {
+                const qLower = query.toLowerCase();
+                matches = allItems.filter(item =>
+                    item.code.toLowerCase().includes(qLower) ||
+                    item.name.toLowerCase().includes(qLower) ||
+                    item.supplier.toLowerCase().includes(qLower) ||
+                    item.spec.toLowerCase().includes(qLower)
+                ).slice(0, 8);
+            }
+
+            if (matches.length === 0) {
+                box.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">일치하는 품목이 없습니다.</div>`;
+                box.classList.remove('hidden');
+                return;
+            }
+
+            box.innerHTML = matches.map(item => `
+                <div onclick="selectSuggestedItem('${item.code}')" class="p-2 hover:bg-blue-50 rounded-lg cursor-pointer border border-transparent hover:border-blue-200 transition flex items-center justify-between text-xs gap-2">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5">
+                            ${getCategoryBadgeHtml(item.category)}
+                            <span class="font-bold text-slate-800 truncate">${highlightMatch(item.name, query)}</span>
+                            <span class="font-mono text-[11px] text-slate-400">(${highlightMatch(item.code, query)})</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 mt-0.5 truncate flex items-center gap-2">
+                            <span>제조원: ${highlightMatch(item.supplier, query)}</span>
+                            <span>규격: ${highlightMatch(item.spec, query)}</span>
+                            <span>위치: ${item.location}</span>
+                        </div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <span class="text-xs font-mono font-bold ${item.quantity > 0 ? 'text-emerald-700' : 'text-slate-400'}">${item.quantity.toLocaleString()} ${item.unit || 'EA'}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            box.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selectSuggestedItem(code) {
+            const input = document.getElementById('manual-code-input');
+            if (input) input.value = code;
+            const box = document.getElementById('search-suggestion-box');
+            if (box) box.classList.add('hidden');
+            processScannedContent(code);
+        }
+
+        function handleSearchKeyNav(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleManualScan();
+            } else if (event.key === 'Escape') {
+                const box = document.getElementById('search-suggestion-box');
+                if (box) box.classList.add('hidden');
+            }
+        }
+
+        // 검색창 외부 클릭 시 추천 드롭다운 자동 닫힘
+        document.addEventListener('click', (e) => {
+            const searchWrapper = document.getElementById('manual-code-input')?.parentElement?.parentElement;
+            const suggestBox = document.getElementById('search-suggestion-box');
+            if (suggestBox && searchWrapper && !searchWrapper.contains(e.target)) {
+                suggestBox.classList.add('hidden');
+            }
+        });
+
         function generateRandomCode() {
             const randomNum = Math.floor(1000 + Math.random() * 9000);
             document.getElementById('form-code').value = 'ITEM-' + randomNum;
@@ -2123,6 +2046,98 @@
             document.getElementById('form-spec').value = m.spec;
             document.getElementById('form-unit').value = m.unit || 'EA';
             updatePreviewLabel();
+        }
+
+        /* --- 스마트 다중 엔진 QR 코드 렌더러 (한글 UTF-8 및 오프라인/iFrame 완벽 대응) --- */
+        function renderQrCodeUniversal(canvasId, fallbackContainerId, rawText, size = 140) {
+            const canvas = document.getElementById(canvasId);
+            const fallbackContainer = document.getElementById(fallbackContainerId);
+            if (!canvas) return;
+
+            // 1. node-qrcode (window.QRCode.toCanvas) 우선 시도
+            if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+                try {
+                    window.QRCode.toCanvas(canvas, rawText, {
+                        width: size,
+                        margin: 1,
+                        errorCorrectionLevel: 'M',
+                        color: { dark: '#0f172a', light: '#ffffff' }
+                    }, function (err) {
+                        if (err) {
+                            console.warn("QRCode.toCanvas 실패, 2차 엔진으로 전환:", err);
+                            useSecondQrEngine(canvas, fallbackContainer, rawText, size);
+                        } else {
+                            canvas.classList.remove('hidden');
+                            if (fallbackContainer) fallbackContainer.classList.add('hidden');
+                        }
+                    });
+                    return;
+                } catch (e) {
+                    console.warn("1차 QR 엔진 실행 예외:", e);
+                }
+            }
+
+            // 2. qrcodejs 또는 이미지 폴백 실행
+            useSecondQrEngine(canvas, fallbackContainer, rawText, size);
+        }
+
+        function useSecondQrEngine(canvas, fallbackContainer, rawText, size) {
+            // 한글 및 특수문자 안전 UTF-8 인코딩
+            let utf8String = rawText;
+            try {
+                utf8String = unescape(encodeURIComponent(rawText));
+            } catch (e) {}
+
+            // 2-1. qrcodejs (new QRCode) 인스턴스 방식 시도
+            if (window.QRCode && typeof window.QRCode === 'function' && fallbackContainer) {
+                try {
+                    fallbackContainer.innerHTML = '';
+                    new window.QRCode(fallbackContainer, {
+                        text: utf8String,
+                        width: size,
+                        height: size,
+                        colorDark: "#0f172a",
+                        colorLight: "#ffffff",
+                        correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.M : 0
+                    });
+
+                    // 생성된 이미지/캔버스를 원본 canvas로 복제 또는 노출
+                    setTimeout(() => {
+                        const generatedImgOrCanvas = fallbackContainer.querySelector('canvas') || fallbackContainer.querySelector('img');
+                        if (generatedImgOrCanvas) {
+                            canvas.classList.add('hidden');
+                            fallbackContainer.classList.remove('hidden');
+                            return;
+                        }
+                    }, 50);
+                } catch (err) {
+                    console.warn("2차 QRCode 인스턴스 실패:", err);
+                }
+            }
+
+            // 2-2. 고해상도 QR API 폴백 (외부 CDN 차단 시에도 100% 즉시 표시)
+            const encodedForUrl = encodeURIComponent(rawText);
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=2&data=${encodedForUrl}`;
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = function () {
+                const ctx = canvas.getContext('2d');
+                canvas.width = size;
+                canvas.height = size;
+                ctx.clearRect(0, 0, size, size);
+                ctx.drawImage(img, 0, 0, size, size);
+                canvas.classList.remove('hidden');
+                if (fallbackContainer) fallbackContainer.classList.add('hidden');
+            };
+            img.onerror = function () {
+                if (fallbackContainer) {
+                    fallbackContainer.innerHTML = `<img src="${qrApiUrl}" class="w-full h-full object-contain" alt="QR Code" />`;
+                    canvas.classList.add('hidden');
+                    fallbackContainer.classList.remove('hidden');
+                }
+            };
+            img.src = qrApiUrl;
         }
 
         /* --- STREAMING_CHUNK:Updating label preview and generating UTF-8 QR code canvas... --- */
@@ -2153,19 +2168,8 @@
                 spec: spec
             });
 
-            const canvas = document.getElementById('label-qr-canvas');
-            if (window.QRCode && window.QRCode.toCanvas && canvas) {
-                QRCode.toCanvas(canvas, qrPayload, {
-                    width: 140,
-                    margin: 1,
-                    color: {
-                        dark: '#0f172a',
-                        light: '#ffffff'
-                    }
-                }, function (error) {
-                    if (error) console.error("QR Code Render Error:", error);
-                });
-            }
+            // 다중 엔진 렌더러 호출
+            renderQrCodeUniversal('label-qr-canvas', 'label-qr-fallback', qrPayload, 140);
         }
 
         function registerAndCreateLabel() {
@@ -3563,23 +3567,12 @@
         function renderAccessQrCode() {
             const input = document.getElementById('app-access-url-input');
             const targetUrl = (input ? input.value.trim() : '') || window.location.href;
-            const canvas = document.getElementById('mobile-access-canvas');
             const displayUrl = document.getElementById('poster-display-url');
 
             if (displayUrl) displayUrl.innerText = targetUrl;
 
-            if (window.QRCode && window.QRCode.toCanvas && canvas) {
-                QRCode.toCanvas(canvas, targetUrl, {
-                    width: 180,
-                    margin: 2,
-                    color: {
-                        dark: '#0f172a',
-                        light: '#ffffff'
-                    }
-                }, function (error) {
-                    if (error) console.error("Access QR Render Error:", error);
-                });
-            }
+            // 모바일 접속 모달 다중 엔진 렌더러 호출
+            renderQrCodeUniversal('mobile-access-canvas', 'mobile-qr-fallback', targetUrl, 180);
         }
 
         function copyAccessUrlToClipboard() {
