@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- QR Code Scanner Engine -->
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- QR Code Generator Library (UTF-8 지원 브라우저 번들) -->
+    <!-- QR Code Generator Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <!-- SheetJS Excel Library -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -66,15 +66,15 @@
             </div>
 
             <!-- 상단 툴바 액션 버튼 그룹 -->
-        <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
-            <button type="button" onclick="openWidgetManagerModal()" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
-                <span>홈 작업창 설정</span>
-            </button>
-            <button type="button" onclick="openMobileAccessModal()" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-                <span>모바일 접속 QR</span>
-            </button>
+            <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
+                <button type="button" onclick="openWidgetManagerModal()" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+                    <span>홈 작업창 설정</span>
+                </button>
+                <button type="button" onclick="openMobileAccessModal()" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                    <span>모바일 접속 QR</span>
+                </button>
                 <button type="button" onclick="openBulkImportModal()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-emerald-600/20">
                     <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
                     <span>엑셀/시트 등록</span>
@@ -146,9 +146,8 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-1">
-        <!-- ==================== TAB 0: 홈 (맞춤형 작업창 대시보드) ==================== -->
+        <!-- TAB 0: 홈 -->
         <section id="tab-content-home" class="tab-section block space-y-6">
-            <!-- 홈 최상단 KPI 요약 헤더 카드 -->
             <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-lg border border-slate-800">
                 <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
                     <div class="space-y-1">
@@ -167,7 +166,6 @@
                     </div>
                 </div>
 
-                <!-- 핵심 요약 지표 (KPI) -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
                     <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 hover:bg-white/10 transition cursor-pointer" onclick="switchTab('master')">
                         <span class="text-slate-400 text-[11px] font-bold block">등록 품목 마스터</span>
@@ -202,7 +200,7 @@
 
             <!-- 홈 화면 작업창 위젯 그리드 컨테이너 -->
             <div id="home-widgets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-                <!-- 위젯 1: 빠른 품목 스캔 & 즉시 작업창 (5 cols) -->
+                <!-- 위젯 1: 빠른 품목 스캔 -->
                 <div id="widget-scan-action" class="home-widget lg:col-span-6 xl:col-span-5 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -255,7 +253,7 @@
                     </div>
                 </div>
 
-                <!-- 위젯 2: 안전재고 부족 알림창 (7 cols) -->
+                <!-- 위젯 2: 안전재고 부족 알림창 -->
                 <div id="widget-low-safety" class="home-widget lg:col-span-6 xl:col-span-7 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -280,7 +278,7 @@
                     <div id="home-low-stock-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
                 </div>
 
-                <!-- 위젯 3: 당일 입출고 & 구글 캘린더 요약창 (6 cols) -->
+                <!-- 위젯 3: 당일 입출고 & 구글 캘린더 요약창 -->
                 <div id="widget-today-calendar" class="home-widget lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -305,7 +303,7 @@
                     <div id="home-today-calendar-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
                 </div>
 
-                <!-- 위젯 4: 실시간 최근 작업 로그 (Audit Log) (6 cols) -->
+                <!-- 위젯 4: 실시간 최근 작업 로그 -->
                 <div id="widget-recent-history" class="home-widget lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -330,7 +328,7 @@
                     <div id="home-recent-history-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
                 </div>
 
-                <!-- 위젯 5: 빠른 원부자재 이동전표 작성창 (6 cols) -->
+                <!-- 위젯 5: 빠른 원부자재 이동전표 작성창 -->
                 <div id="widget-quick-transfer" class="home-widget lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -365,7 +363,7 @@
                     </div>
                 </div>
 
-                <!-- 위젯 6: 간편 QR 라벨 발행 바로가기창 (6 cols) -->
+                <!-- 위젯 6: 간편 QR 라벨 발행 바로가기창 -->
                 <div id="widget-quick-label" class="home-widget lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -400,7 +398,7 @@
                     </div>
                 </div>
 
-                <!-- 위젯 7: 월간 실적 요약 미니 그래프창 (12 cols) -->
+                <!-- 위젯 7: 월간 실적 요약 미니 그래프창 -->
                 <div id="widget-monthly-summary" class="home-widget lg:col-span-12 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 gap-2">
                         <div class="flex items-center gap-2">
@@ -450,7 +448,7 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 1: 현장 스캔 및 작업 (복구 완료) ==================== -->
+        <!-- TAB 1: 현장 스캔 및 작업 -->
         <section id="tab-content-scan" class="tab-section hidden space-y-6">
             <div id="deep-link-banner" class="hidden p-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-md flex items-center justify-between">
                 <div class="flex items-center gap-2 text-xs font-semibold">
@@ -463,7 +461,7 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- 좌측: 검색 및 카메라 스캐너 영역 -->
+                <!-- 좌측 검색/카메라 -->
                 <div class="lg:col-span-5 space-y-4">
                     <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
                         <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
@@ -492,7 +490,6 @@
                         <div id="search-suggestions-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-72 overflow-y-auto divide-y divide-slate-100"></div>
                     </div>
 
-                    <!-- 실시간 카메라 뷰파인더 카드 -->
                     <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
@@ -534,7 +531,7 @@
                     </div>
                 </div>
 
-                <!-- 우측: 품목 상세 정보 및 작업 패널 -->
+                <!-- 우측 품목 상세 및 수불 패널 -->
                 <div class="lg:col-span-7 space-y-4">
                     <div id="scanned-detail-card" class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
                         <div class="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100">
@@ -624,10 +621,9 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 2: QR 생성 및 라벨발행 ==================== -->
+        <!-- TAB 2: QR 생성 / 라벨발행 -->
         <section id="tab-content-label" class="tab-section hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- 좌측 라벨 정보 입력 폼 -->
                 <div class="lg:col-span-6 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 gap-2">
                         <div class="flex items-center gap-2">
@@ -635,7 +631,6 @@
                             <h3 class="text-base font-bold text-slate-900">물류 라벨 QR 생성기</h3>
                         </div>
                         
-                        <!-- 구분 설정 후 마스터 품목 실시간 검색 영역 -->
                         <div class="relative flex items-center gap-1.5 min-w-[280px] sm:min-w-[340px]">
                             <select id="label-search-category" 
                                 onchange="handleLabelMasterSearch(document.getElementById('label-master-search-input').value)" 
@@ -697,7 +692,6 @@
                             </div>
                         </div>
 
-                        <!-- 달력 날짜 입력 및 수정 필드 -->
                         <div class="sm:col-span-2 bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
                             <label class="block text-xs font-bold text-blue-900 mb-1 flex items-center justify-between">
                                 <span class="flex items-center gap-1.5">
@@ -710,7 +704,6 @@
                         </div>
                     </div>
 
-                    <!-- 스마트폰 기본 카메라 딥링크 옵션 -->
                     <div class="p-3 bg-indigo-50/80 border border-indigo-200 rounded-xl space-y-1.5">
                         <div class="flex items-center justify-between">
                             <label class="flex items-center gap-2 cursor-pointer">
@@ -736,7 +729,7 @@
                     </div>
                 </div>
 
-                <!-- 우측 라벨 미리보기 (70 x 50mm 규격) -->
+                <!-- 70x50mm 라벨 미리보기 -->
                 <div class="lg:col-span-6 space-y-4">
                     <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
                         <div class="w-full flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -753,7 +746,6 @@
                             </div>
                         </div>
 
-                        <!-- 70x50mm 라벨 본체 -->
                         <div id="printable-label-card" class="printable-area w-full max-w-[420px] bg-white border-2 border-slate-900 rounded-xl p-4 shadow-md text-slate-900">
                             <div class="flex items-center justify-between pb-2 border-b-2 border-slate-900 mb-2">
                                 <div class="flex items-center gap-1.5">
@@ -803,7 +795,7 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 3: 품목 마스터 관리 ==================== -->
+        <!-- TAB 3: 품목 마스터 관리 -->
         <section id="tab-content-master" class="tab-section hidden space-y-4">
             <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -851,7 +843,7 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 4: 창고 재고 현황 ==================== -->
+        <!-- TAB 4: 창고 재고 현황 -->
         <section id="tab-content-inventory" class="tab-section hidden space-y-4">
             <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -897,7 +889,7 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 5: 자재 수불부 ==================== -->
+        <!-- TAB 5: 자재 수불부 -->
         <section id="tab-content-ledger" class="tab-section hidden space-y-4">
             <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -911,7 +903,6 @@
                         <p class="text-xs text-slate-500 mt-0.5">전기이월, 입고(+), 사용(-), 이동(±), 출고(-), 폐기(-), 현재고 일자별 누적 및 분류별 원장</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <!-- 뷰 모드 토글 (일자별 누적 대장 vs 품목별 요약) -->
                         <div class="flex rounded-xl border border-slate-200 p-0.5 bg-slate-100 text-xs">
                             <button type="button" id="ledger-btn-view-cumulative" onclick="switchLedgerView('cumulative')" class="px-2.5 py-1.5 rounded-lg font-bold bg-white text-blue-700 shadow-xs">
                                 📅 일자별 누적 원장
@@ -932,7 +923,6 @@
                     </div>
                 </div>
 
-                <!-- 완제품 / 원료 / 부자재 수불부 전용 선택 탭 바 -->
                 <div class="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
                     <span class="text-[11px] font-bold text-slate-500 px-2 flex items-center gap-1">
                         <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-600"></i>
@@ -955,7 +945,6 @@
                     </button>
                 </div>
 
-                <!-- 필터 및 키워드 검색 바 -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 text-xs">
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 mb-1">조회 시작일</label>
@@ -992,7 +981,6 @@
                     </div>
                 </div>
 
-                <!-- 수불부 본체 테이블 -->
                 <div id="printable-ledger-card" class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="w-full text-left text-xs">
                         <thead id="ledger-table-thead" class="bg-slate-50 text-slate-700 border-b border-slate-200"></thead>
@@ -1003,12 +991,10 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 6: 수불·입출고 캘린더 (구글 캘린더 연동) ==================== -->
+        <!-- TAB 6: 수불·입출고 캘린더 -->
         <section id="tab-content-calendar" class="tab-section hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- 좌측 메인 캘린더 영역 (8 cols) -->
                 <div class="lg:col-span-8 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                    <!-- 캘린더 헤더 & 월 이동 컨트롤 -->
                     <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100 shadow-xs">
@@ -1023,7 +1009,6 @@
                             </div>
                         </div>
 
-                        <!-- 캘린더 월 전환 버튼 -->
                         <div class="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
                             <button type="button" onclick="moveCalendarMonth(-1)" class="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition" title="이전 달">
                                 <i data-lucide="chevron-left" class="w-4 h-4"></i>
@@ -1037,7 +1022,6 @@
                         </div>
                     </div>
 
-                    <!-- 작업 유형 필터 뱃지 -->
                     <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
                         <div class="flex flex-wrap items-center gap-1.5">
                             <span class="text-[11px] font-bold text-slate-500 mr-1">표시 필터:</span>
@@ -1065,7 +1049,6 @@
                         </button>
                     </div>
 
-                    <!-- 캘린더 요일 헤더 -->
                     <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500 py-1 border-b border-slate-100">
                         <span class="text-rose-500">일</span>
                         <span>월</span>
@@ -1076,11 +1059,9 @@
                         <span class="text-blue-500">토</span>
                     </div>
 
-                    <!-- 캘린더 날짜 그리드 -->
                     <div id="calendar-grid-cells" class="grid grid-cols-7 gap-1 min-h-[360px]"></div>
                 </div>
 
-                <!-- 우측 선택 일자 상세 & 구글 캘린더 등록 액션 패널 (4 cols) -->
                 <div class="lg:col-span-4 space-y-4">
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -1093,15 +1074,8 @@
                             </span>
                         </div>
 
-                        <!-- 구글 캘린더 원클릭 연동 배너 -->
                         <div class="p-3 bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 border border-indigo-200 rounded-xl space-y-2">
                             <div class="flex items-center gap-2">
-                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
-                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                                </svg>
                                 <span class="text-xs font-extrabold text-slate-800">구글 캘린더(Google Calendar) 동기화</span>
                             </div>
                             <p class="text-[11px] text-slate-600 leading-relaxed">
@@ -1112,14 +1086,13 @@
                                     <i data-lucide="external-link" class="w-3 h-3"></i>
                                     <span>구글 캘린더에 등록</span>
                                 </button>
-                                <button type="button" onclick="downloadSelectedDayIcs()" class="py-1.5 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1" title="애플/아웃룩 iCal 파일 내보내기">
+                                <button type="button" onclick="downloadSelectedDayIcs()" class="py-1.5 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1" title="iCal 파일 내보내기">
                                     <i data-lucide="download" class="w-3 h-3"></i>
                                     <span>.ics</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- 선택 일자 이벤트 리스트 -->
                         <div>
                             <span class="text-xs font-bold text-slate-700 block mb-2">당일 작업 및 일정 목록</span>
                             <div id="cal-day-event-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-1"></div>
@@ -1129,9 +1102,8 @@
             </div>
         </section>
 
-        <!-- ==================== TAB: 월간 실적 현황판 (그래프 분석 대시보드) ==================== -->
+        <!-- TAB 7: 월간 실적 현황판 -->
         <section id="tab-content-analytics" class="tab-section hidden space-y-6">
-            <!-- 최상단 컨트롤 바: 연도/월 선택 및 필터 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
                     <div class="flex items-center gap-3">
@@ -1159,7 +1131,6 @@
                     </div>
                 </div>
 
-                <!-- 필터 셀렉터 바 -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 text-xs">
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 mb-1">분석 연도</label>
@@ -1207,7 +1178,6 @@
                 </div>
             </div>
 
-            <!-- 당월 핵심 실적 KPI 카드 4종 -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                     <div class="flex items-center justify-between text-slate-400 mb-2">
@@ -1266,9 +1236,7 @@
                 </div>
             </div>
 
-            <!-- 메인 차트 그리드: 2행 구성 -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- 차트 1: 일자별 입고 vs 출고/사용 추이 (8 cols) -->
                 <div class="lg:col-span-8 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex flex-wrap items-center justify-between pb-2 border-b border-slate-100 gap-2">
                         <div class="flex items-center gap-2">
@@ -1282,7 +1250,6 @@
                     </div>
                 </div>
 
-                <!-- 차트 2: 품목 구분별 수불 비중 도넛 차트 (4 cols) -->
                 <div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -1296,7 +1263,6 @@
                     </div>
                 </div>
 
-                <!-- 차트 3: 당월 물동량 TOP 5 품목 가로 막대 차트 (6 cols) -->
                 <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -1310,7 +1276,6 @@
                     </div>
                 </div>
 
-                <!-- 차트 4: 보관 거점별 물동량 점유율 차트 (6 cols) -->
                 <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                         <div class="flex items-center gap-2">
@@ -1325,7 +1290,6 @@
                 </div>
             </div>
 
-            <!-- 당월 품목별 실적 집계 테이블 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 gap-2">
                     <div>
@@ -1360,7 +1324,7 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 7: 작업 이력 ==================== -->
+        <!-- TAB 8: 작업 이력 -->
         <section id="tab-content-history" class="tab-section hidden space-y-4">
             <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -1401,7 +1365,7 @@
         </section>
     </main>
 
-    <!-- 모달 1: 입출고/이동/폐기 실행 모달 -->
+    <!-- 모달: 수불 작업 실행 -->
     <div id="action-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div id="action-modal-header" class="p-4 bg-blue-600 text-white flex items-center justify-between">
@@ -1449,7 +1413,7 @@
         </div>
     </div>
 
-    <!-- 모달 2: 원부자재 이동전표 서식 모달 -->
+    <!-- 모달: 원부자재 이동전표 서식 -->
     <div id="transfer-slip-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6">
             <div class="p-4 bg-amber-500 text-white flex items-center justify-between no-print">
@@ -1552,7 +1516,7 @@
         </div>
     </div>
 
-    <!-- 모달 3: 엑셀/구글시트 대량 일괄 등록 -->
+    <!-- 모달: 대량 일괄 등록 -->
     <div id="bulk-import-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6">
             <div class="p-4 bg-emerald-600 text-white flex items-center justify-between">
@@ -1647,7 +1611,7 @@
         </div>
     </div>
 
-    <!-- 모달 4: 분류 관리 -->
+    <!-- 모달: 분류 관리 -->
     <div id="category-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div class="p-4 bg-slate-800 text-white flex items-center justify-between">
@@ -1667,7 +1631,7 @@
         </div>
     </div>
 
-    <!-- 모달 5: 거점 관리 -->
+    <!-- 모달: 거점 관리 -->
     <div id="location-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div class="p-4 bg-slate-800 text-white flex items-center justify-between">
@@ -1687,7 +1651,7 @@
         </div>
     </div>
 
-    <!-- 모달 6: 모바일 앱 접속 QR & 포스터 -->
+    <!-- 모달: 모바일 앱 접속 QR -->
     <div id="mobile-access-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div class="p-4 bg-blue-600 text-white flex items-center justify-between no-print">
@@ -1705,7 +1669,7 @@
                     <div id="mobile-access-qr-fallback" class="hidden w-[200px] h-[200px]"></div>
                 </div>
                 <div class="w-full text-left space-y-1 no-print">
-                    <label class="text-[10px] font-bold text-slate-400">접속 URL (필요 시 사내 IP 등으로 변경 가능):</label>
+                    <label class="text-[10px] font-bold text-slate-400">접속 URL:</label>
                     <input type="text" id="mobile-url-input" oninput="regenerateMobileQr(this.value)" class="w-full px-2.5 py-1.5 text-xs font-mono border border-slate-300 rounded-lg">
                 </div>
                 <div class="flex gap-2 w-full no-print">
@@ -1722,7 +1686,7 @@
         </div>
     </div>
 
-    <!-- 모달 7: 품목 마스터 등록/수정 모달 -->
+    <!-- 모달: 품목 마스터 등록/수정 -->
     <div id="master-edit-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div class="p-4 bg-slate-800 text-white flex items-center justify-between">
@@ -1779,7 +1743,7 @@
         </div>
     </div>
 
-    <!-- 모달 8: 시스템 백업 및 복원 -->
+    <!-- 모달: 백업 및 복원 -->
     <div id="backup-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div class="p-4 bg-slate-800 text-white flex items-center justify-between">
@@ -1808,7 +1772,7 @@
         </div>
     </div>
 
-    <!-- 모달 9: 신규 입출고 일정 예약 등록 (구글 캘린더 즉시 연동) -->
+    <!-- 모달: 신규 입출고 일정 예약 등록 -->
     <div id="new-schedule-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div class="p-4 bg-indigo-600 text-white flex items-center justify-between">
@@ -1872,7 +1836,7 @@
         </div>
     </div>
 
-    <!-- 모달 10: 홈 화면 작업창 위젯 넣기/빼기 관리 모달 -->
+    <!-- 모달: 홈 화면 작업창 위젯 넣기/빼기 -->
     <div id="widget-manager-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div class="p-4 bg-indigo-600 text-white flex items-center justify-between">
@@ -2023,7 +1987,7 @@
             { id: 7, timestamp: "2026-09-19 15:00", type: "USE", code: "ITEM-1003", name: "에폭시 수지 수지액", qty: 10, fromLoc: "화성 자재창고", toLoc: "-", reason: "품질 검사 및 소성 테스트 사용" }
         ];
 
-        /* 예약 일정 DB (캘린더 등록용) */
+        /* 예약 일정 DB */
         let schedulesDB = [
             { id: "SCH-1", date: "2026-09-22", type: "IN", code: "ITEM-1001", name: "스테인리스 육각볼트", qty: 200, location: "김포공장 A동", title: "한국정밀 SUS304 추가 발주건 입고" },
             { id: "SCH-2", date: "2026-09-25", type: "OUT", code: "ITEM-1002", name: "산업용 서보 모터", qty: 5, location: "김포2공장 B동", title: "라인 설치용 완제품 출고" }
@@ -2035,10 +1999,11 @@
         let parsedBulkStagingList = [];
         let ledgerCurrentCategory = "";
         let ledgerViewMode = "cumulative";
+        let currentModalActionType = 'IN';
 
         /* 캘린더 상태 */
         let calCurrentYear = 2026;
-        let calCurrentMonth = 8; // 0-indexed: 8 = 9월
+        let calCurrentMonth = 8;
         let calSelectedDate = "2026-09-20";
         let calTypeFilter = "";
 
@@ -2049,7 +2014,8 @@
         let homeChartMonthlyTrendInstance = null;
 
         let analyticsCurrentYear = 2026;
-        let analyticsCurrentMonth = 9; // 1-indexed (9월)
+        let analyticsCurrentMonth = 9;
+        let editingMasterCode = null;
 
         function saveStateToStorage() {
             try {
@@ -2109,6 +2075,17 @@
             return `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">${cat || '기타'}</span>`;
         }
 
+        function getActionBadge(type) {
+            switch(type) {
+                case 'IN': return `<span class="text-emerald-700 font-bold">입고</span>`;
+                case 'USE': return `<span class="text-blue-700 font-bold">사용</span>`;
+                case 'MOVE': return `<span class="text-amber-700 font-bold">이동</span>`;
+                case 'OUT': return `<span class="text-purple-700 font-bold">출고</span>`;
+                case 'DISCARD': return `<span class="text-rose-700 font-bold">폐기</span>`;
+                default: return `<span class="text-slate-700 font-bold">${type}</span>`;
+            }
+        }
+
         function highlightMatch(text, query) {
             if (!text) return '';
             if (!query) return text;
@@ -2119,7 +2096,42 @@
                    text.substring(idx + query.length);
         }
 
-        /* ==================== 홈 대시보드 및 위젯 관리 로직 ==================== */
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+
+            const targetBtn = document.getElementById(`tab-btn-${tabName}`);
+            const targetSection = document.getElementById(`tab-content-${tabName}`);
+
+            if (targetBtn) targetBtn.classList.add('active');
+            if (targetSection) targetSection.classList.remove('hidden');
+
+            if (tabName === 'home') {
+                renderHomeDashboard();
+            } else if (tabName === 'scan') {
+                if (!currentActiveScannedItem && inventoryDB.length > 0) {
+                    renderScannedDetailView(inventoryDB[0]);
+                } else if (currentActiveScannedItem) {
+                    renderScannedDetailView(currentActiveScannedItem);
+                }
+            } else if (tabName === 'label') {
+                updatePreviewLabel();
+            } else if (tabName === 'master') {
+                renderMasterTable();
+            } else if (tabName === 'inventory') {
+                renderInventoryTable();
+            } else if (tabName === 'ledger') {
+                renderStockLedger();
+            } else if (tabName === 'calendar') {
+                renderWmsCalendar();
+            } else if (tabName === 'analytics') {
+                renderMonthlyAnalytics();
+            } else if (tabName === 'history') {
+                renderHistoryTable();
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
         function openWidgetManagerModal() {
             Object.keys(homeWidgetsState).forEach(id => {
                 const chk = document.getElementById(`chk-${id}`);
@@ -2173,14 +2185,12 @@
         function renderHomeDashboard() {
             applyWidgetVisibility();
 
-            // 1. 현재 날짜/시간
             const timeEl = document.getElementById('home-current-time');
             if (timeEl) {
                 const now = new Date();
                 timeEl.innerText = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} 기준`;
             }
 
-            // 2. KPI 통계
             const masterCountEl = document.getElementById('home-kpi-master-count');
             const totalStockEl = document.getElementById('home-kpi-total-stock');
             const lowStockEl = document.getElementById('home-kpi-low-stock');
@@ -2200,19 +2210,22 @@
             if (lowStockEl) lowStockEl.innerText = lowStockItems.length;
             if (todayEventsEl) todayEventsEl.innerText = todayEvents.length;
 
-            // 3. 위젯 1: 빠른 스캔 품목 기본값 세팅
             if (!currentActiveScannedItem && inventoryDB.length > 0) {
                 currentActiveScannedItem = inventoryDB[0];
             }
             if (currentActiveScannedItem) {
-                document.getElementById('hq-item-badge').innerText = currentActiveScannedItem.category;
-                document.getElementById('hq-item-name').innerText = currentActiveScannedItem.name;
-                document.getElementById('hq-item-qty').innerText = `${currentActiveScannedItem.quantity} ${currentActiveScannedItem.unit || 'EA'}`;
-                document.getElementById('hq-item-code').innerText = currentActiveScannedItem.code;
-                document.getElementById('hq-item-loc').innerText = currentActiveScannedItem.location;
+                const badgeEl = document.getElementById('hq-item-badge');
+                if(badgeEl) badgeEl.innerText = currentActiveScannedItem.category;
+                const nameEl = document.getElementById('hq-item-name');
+                if(nameEl) nameEl.innerText = currentActiveScannedItem.name;
+                const qtyEl = document.getElementById('hq-item-qty');
+                if(qtyEl) qtyEl.innerText = `${currentActiveScannedItem.quantity} ${currentActiveScannedItem.unit || 'EA'}`;
+                const codeEl = document.getElementById('hq-item-code');
+                if(codeEl) codeEl.innerText = currentActiveScannedItem.code;
+                const locEl = document.getElementById('hq-item-loc');
+                if(locEl) locEl.innerText = currentActiveScannedItem.location;
             }
 
-            // 4. 위젯 2: 안전재고 부족 리스트 렌더링
             const lowStockContainer = document.getElementById('home-low-stock-list');
             if (lowStockContainer) {
                 if (lowStockItems.length === 0) {
@@ -2250,7 +2263,6 @@
                 }
             }
 
-            // 5. 위젯 3: 오늘 캘린더 일정 요약
             const todayCalContainer = document.getElementById('home-today-calendar-list');
             if (todayCalContainer) {
                 if (todayEvents.length === 0) {
@@ -2279,7 +2291,6 @@
                 }
             }
 
-            // 6. 위젯 4: 최근 작업 로그
             const recentHistContainer = document.getElementById('home-recent-history-list');
             if (recentHistContainer) {
                 const recents = historyDB.slice(0, 4);
@@ -2304,7 +2315,6 @@
                 }
             }
 
-            // 7. 이동전표 뱃지
             const slipBadge = document.getElementById('home-slip-count-badge');
             if (slipBadge) {
                 const moveCount = historyDB.filter(h => h.type === 'MOVE').length;
@@ -2316,7 +2326,6 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        /* 홈 화면 내 월간 실적 미니 차트 렌더링 */
         function renderHomeMonthlyWidget() {
             const now = new Date();
             const y = now.getFullYear();
@@ -2349,7 +2358,6 @@
                 netEl.className = `font-black font-mono ${diff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
             }
 
-            // 미니 차트 일별 집계
             const daysInMonth = new Date(y, m, 0).getDate();
             const labels = [];
             const inData = [];
@@ -2422,48 +2430,17 @@
             }
             processScannedContent(val);
             if (currentActiveScannedItem) {
-                document.getElementById('hq-item-badge').innerText = currentActiveScannedItem.category;
-                document.getElementById('hq-item-name').innerText = currentActiveScannedItem.name;
-                document.getElementById('hq-item-qty').innerText = `${currentActiveScannedItem.quantity} ${currentActiveScannedItem.unit || 'EA'}`;
-                document.getElementById('hq-item-code').innerText = currentActiveScannedItem.code;
-                document.getElementById('hq-item-loc').innerText = currentActiveScannedItem.location;
+                const badgeEl = document.getElementById('hq-item-badge');
+                if(badgeEl) badgeEl.innerText = currentActiveScannedItem.category;
+                const nameEl = document.getElementById('hq-item-name');
+                if(nameEl) nameEl.innerText = currentActiveScannedItem.name;
+                const qtyEl = document.getElementById('hq-item-qty');
+                if(qtyEl) qtyEl.innerText = `${currentActiveScannedItem.quantity} ${currentActiveScannedItem.unit || 'EA'}`;
+                const codeEl = document.getElementById('hq-item-code');
+                if(codeEl) codeEl.innerText = currentActiveScannedItem.code;
+                const locEl = document.getElementById('hq-item-loc');
+                if(locEl) locEl.innerText = currentActiveScannedItem.location;
             }
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
-
-            const targetBtn = document.getElementById(`tab-btn-${tabName}`);
-            const targetSection = document.getElementById(`tab-content-${tabName}`);
-
-            if (targetBtn) targetBtn.classList.add('active');
-            if (targetSection) targetSection.classList.remove('hidden');
-
-            if (tabName === 'home') {
-                renderHomeDashboard();
-            } else if (tabName === 'scan') {
-                if (!currentActiveScannedItem && inventoryDB.length > 0) {
-                    renderScannedDetailView(inventoryDB[0]);
-                } else if (currentActiveScannedItem) {
-                    renderScannedDetailView(currentActiveScannedItem);
-                }
-            } else if (tabName === 'label') {
-                updatePreviewLabel();
-            } else if (tabName === 'master') {
-                renderMasterTable();
-            } else if (tabName === 'inventory') {
-                renderInventoryTable();
-            } else if (tabName === 'ledger') {
-                renderStockLedger();
-            } else if (tabName === 'calendar') {
-                renderWmsCalendar();
-            } else if (tabName === 'analytics') {
-                renderMonthlyAnalytics();
-            } else if (tabName === 'history') {
-                renderHistoryTable();
-            }
-            if (window.lucide) lucide.createIcons();
         }
 
         function closeDeepLinkBanner() {
@@ -2479,7 +2456,6 @@
             }
         }
 
-        /* ==================== 캘린더 & 구글 캘린더 연동 로직 ==================== */
         function moveCalendarMonth(delta) {
             calCurrentMonth += delta;
             if (calCurrentMonth < 0) {
@@ -2777,7 +2753,9 @@
             const dateInput = document.getElementById('sched-date');
             if (dateInput) dateInput.value = calSelectedDate;
 
-            onScheduleItemSelectChange(masterDB[0]?.code);
+            if (masterDB.length > 0) {
+                onScheduleItemSelectChange(masterDB[0].code);
+            }
             document.getElementById('new-schedule-modal')?.classList.remove('hidden');
         }
 
@@ -2836,7 +2814,6 @@
             }
         }
 
-        /* ==================== 월간 실적 현황판 (Analytics Dashboard) ==================== */
         function setAnalyticsToCurrentMonth() {
             const now = new Date();
             const ySelect = document.getElementById('analytics-select-year');
@@ -2868,7 +2845,6 @@
             const mPrefix = `${y}-${String(m).padStart(2, '0')}`;
             const daysInMonth = new Date(y, m, 0).getDate();
 
-            // 1. 해당 월 작업 이력 필터링
             const targetHist = historyDB.filter(h => {
                 if (!h.timestamp.startsWith(mPrefix)) return false;
                 const master = masterDB.find(item => item.code === h.code);
@@ -2881,7 +2857,6 @@
                 return true;
             });
 
-            // 2. 월간 핵심 KPI 집계
             let totalIn = 0, countIn = 0;
             let totalUse = 0, countUse = 0;
             let totalOut = 0, countOut = 0;
@@ -2899,7 +2874,6 @@
             const totalShipment = totalUse + totalOut;
             const netStock = totalIn - (totalShipment + totalDiscard);
 
-            // KPI 카드 반영
             document.getElementById('kpi-monthly-in-qty').innerText = totalIn.toLocaleString();
             document.getElementById('kpi-monthly-in-count').innerText = `총 ${countIn}건 입고 작업`;
 
@@ -2914,7 +2888,6 @@
             netEl.className = `text-2xl sm:text-3xl font-black font-mono ${netStock >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
             document.getElementById('kpi-monthly-discard-count').innerText = `폐기: ${totalDiscard.toLocaleString()} EA`;
 
-            // 3. 차트 1: 일자별 입고 vs 출고(사용) 추이 데이터 생성
             const dailyLabels = [];
             const dailyInData = [];
             const dailyOutData = [];
@@ -2934,7 +2907,6 @@
 
             renderDailyTrendChart(dailyLabels, dailyInData, dailyOutData);
 
-            // 4. 차트 2: 품목 구분별(완제/원료/부자재) 비중 집계
             const catShareMap = {};
             categoriesDB.forEach(c => catShareMap[c] = 0);
 
@@ -2947,7 +2919,6 @@
 
             renderCategoryShareChart(catShareMap);
 
-            // 5. 차트 3: 최다 입출고 품목 TOP 5 집계
             const itemActivityMap = {};
             targetHist.forEach(h => {
                 if (!itemActivityMap[h.code]) {
@@ -2963,7 +2934,6 @@
 
             renderTopItemsChart(topItems);
 
-            // 6. 차트 4: 보관 거점별 실적 점유율
             const locShareMap = {};
             locationsDB.forEach(l => locShareMap[l] = 0);
 
@@ -2976,14 +2946,11 @@
             });
 
             renderLocationShareChart(locShareMap);
-
-            // 7. 하단: 품목별 수불 집계 테이블 렌더링
             renderMonthlySummaryTable(mPrefix, catFilter, locFilter);
 
             if (window.lucide) lucide.createIcons();
         }
 
-        /* 차트 1 렌더링: 일별 추이 (Bar + Line) */
         function renderDailyTrendChart(labels, inData, outData) {
             const canvas = document.getElementById('analytics-chart-daily-trend');
             if (!canvas || typeof Chart === 'undefined') return;
@@ -3043,7 +3010,6 @@
             });
         }
 
-        /* 차트 2 렌더링: 품목 구분별 비중 (Doughnut) */
         function renderCategoryShareChart(catMap) {
             const canvas = document.getElementById('analytics-chart-category-share');
             if (!canvas || typeof Chart === 'undefined') return;
@@ -3087,7 +3053,6 @@
             });
         }
 
-        /* 차트 3 렌더링: TOP 5 품목 가로 막대 */
         function renderTopItemsChart(topItems) {
             const canvas = document.getElementById('analytics-chart-top-items');
             if (!canvas || typeof Chart === 'undefined') return;
@@ -3130,7 +3095,6 @@
             });
         }
 
-        /* 차트 4 렌더링: 거점별 실적 점유율 */
         function renderLocationShareChart(locMap) {
             const canvas = document.getElementById('analytics-chart-location-share');
             if (!canvas || typeof Chart === 'undefined') return;
@@ -3167,7 +3131,6 @@
             });
         }
 
-        /* 품목별 월간 수불 집계 테이블 */
         function renderMonthlySummaryTable(monthPrefix, catFilter, locFilter) {
             const tbody = document.getElementById('analytics-table-tbody');
             const tfoot = document.getElementById('analytics-table-tfoot');
@@ -3235,7 +3198,6 @@
             `;
         }
 
-        /* 월간 실적 CSV 파일 다운로드 */
         function exportMonthlyReportToCSV() {
             const y = analyticsCurrentYear;
             const m = analyticsCurrentMonth;
@@ -3527,7 +3489,6 @@
             }
         }
 
-        /* ==================== 스캔 및 작업 처리 로직 ==================== */
         function processScannedContent(rawInput) {
             if (!rawInput || !String(rawInput).trim()) {
                 showToast("스캔할 데이터가 없습니다.", "warning");
@@ -3652,17 +3613,6 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        function getActionBadge(type) {
-            switch(type) {
-                case 'IN': return `<span class="text-emerald-700 font-bold">입고</span>`;
-                case 'USE': return `<span class="text-blue-700 font-bold">사용</span>`;
-                case 'MOVE': return `<span class="text-amber-700 font-bold">이동</span>`;
-                case 'OUT': return `<span class="text-purple-700 font-bold">출고</span>`;
-                case 'DISCARD': return `<span class="text-rose-700 font-bold">폐기</span>`;
-                default: return type;
-            }
-        }
-
         async function toggleCamera() {
             if (isCameraActive) {
                 stopCamera();
@@ -3684,7 +3634,7 @@
 
                 const cameras = await Html5Qrcode.getCameras();
                 const camSelect = document.getElementById('camera-select');
-                if (cameras && cameras.length) {
+                if (cameras && cameras.length > 0) {
                     camSelect.innerHTML = cameras.map((c, idx) => 
                         `<option value="${c.id}">${c.label || '카메라 ' + (idx + 1)}</option>`
                     ).join('');
@@ -3708,7 +3658,7 @@
                 document.getElementById('btn-toggle-camera').className = "py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm";
             } catch (err) {
                 console.error("Camera start failed:", err);
-                showToast("카메라 접근 권한이 없거나 HTTPS 환경이 아닙니다. '사진으로 촬영'을 이용하세요.", "warning");
+                showToast("카메라 접근 권한이 없거나 브라우저 환경에서 차단되었습니다. '사진으로 촬영'을 이용하세요.", "warning");
                 stopCamera();
             }
         }
@@ -3829,8 +3779,6 @@
             if (input) input.value = "";
             document.getElementById('search-suggestions-dropdown')?.classList.add('hidden');
         }
-
-        let currentModalActionType = 'IN';
 
         function openActionModal(type) {
             if (!currentActiveScannedItem) {
@@ -3970,7 +3918,6 @@
             showToast(`[${currentActiveScannedItem.name}] 작업 처리가 완료되었습니다.`, "success");
         }
 
-        /* ==================== 이동전표 모달 로직 ==================== */
         function openTransferSlipModal() {
             const today = new Date().toISOString().split('T')[0];
             const docNo = `TR-${today.replace(/-/g, '')}-001`;
@@ -4039,7 +3986,6 @@
             document.getElementById('slip-total-qty').innerText = `${h.qty} ${m ? m.unit : 'EA'}`;
         }
 
-        /* ==================== 자재 수불부 로직 ==================== */
         function setLedgerCategory(cat) {
             ledgerCurrentCategory = cat || "";
             document.querySelectorAll('.category-tab-btn').forEach(btn => {
@@ -4397,7 +4343,6 @@
             window.print();
         }
 
-        /* ==================== 마스터/재고/이력 테이블 렌더링 ==================== */
         function renderMasterTable() {
             const tbody = document.getElementById('master-table-tbody');
             if (!tbody) return;
@@ -4448,8 +4393,6 @@
 
             if (window.lucide) lucide.createIcons();
         }
-
-        let editingMasterCode = null;
 
         function openMasterModal(mode, code = '') {
             editingMasterCode = mode === 'EDIT' ? code : null;
@@ -4636,7 +4579,6 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        /* ==================== 분류 및 거점 관리 로직 ==================== */
         function populateCategorySelects() {
             const formCat = document.getElementById('form-category');
             const mEditCat = document.getElementById('m-edit-category');
@@ -4697,7 +4639,8 @@
                 return;
             }
             categoriesDB.push(val);
-            document.getElementById('new-category-input').value = "";
+            const input = document.getElementById('new-category-input');
+            if(input) input.value = "";
             saveStateToStorage();
             populateCategorySelects();
             showToast(`분류 [${val}] 추가 완료`, "success");
@@ -4741,7 +4684,8 @@
                 return;
             }
             locationsDB.push(val);
-            document.getElementById('new-location-input').value = "";
+            const input = document.getElementById('new-location-input');
+            if(input) input.value = "";
             saveStateToStorage();
             populateLocationSelects();
             showToast(`거점 [${val}] 추가 완료`, "success");
@@ -4770,7 +4714,6 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        /* ==================== 엑셀/구글시트 대량 일괄 등록 ==================== */
         function openBulkImportModal() {
             document.getElementById('bulk-import-modal')?.classList.remove('hidden');
         }
@@ -4868,26 +4811,32 @@
             parsedBulkStagingList = staging;
 
             document.getElementById('detected-columns-bar')?.classList.remove('hidden');
-            document.getElementById('bulk-new-badge').innerText = `신규: ${newCount}건`;
-            document.getElementById('bulk-update-badge').innerText = `갱신: ${updateCount}건`;
-            document.getElementById('bulk-preview-count').innerText = staging.length;
+            const newBadge = document.getElementById('bulk-new-badge');
+            if(newBadge) newBadge.innerText = `신규: ${newCount}건`;
+            const updateBadge = document.getElementById('bulk-update-badge');
+            if(updateBadge) updateBadge.innerText = `갱신: ${updateCount}건`;
+            const previewCount = document.getElementById('bulk-preview-count');
+            if(previewCount) previewCount.innerText = staging.length;
 
             const tbody = document.getElementById('bulk-preview-tbody');
-            tbody.innerHTML = staging.map(item => `
-                <tr class="hover:bg-slate-50">
-                    <td class="py-1.5 px-2 font-bold ${item.isExisting ? 'text-blue-600' : 'text-emerald-600'}">${item.isExisting ? '갱신' : '신규'}</td>
-                    <td class="py-1.5 px-2">${item.cat}</td>
-                    <td class="py-1.5 px-2 font-mono font-bold">${item.code}</td>
-                    <td class="py-1.5 px-2 font-bold">${item.name}</td>
-                    <td class="py-1.5 px-2 text-slate-500">${item.sup}</td>
-                    <td class="py-1.5 px-2 text-slate-500">${item.spec}</td>
-                    <td class="py-1.5 px-2 font-black">${item.qty} ${item.unit}</td>
-                    <td class="py-1.5 px-2 text-blue-700">${item.loc}</td>
-                </tr>
-            `).join('');
+            if(tbody) {
+                tbody.innerHTML = staging.map(item => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-1.5 px-2 font-bold ${item.isExisting ? 'text-blue-600' : 'text-emerald-600'}">${item.isExisting ? '갱신' : '신규'}</td>
+                        <td class="py-1.5 px-2">${item.cat}</td>
+                        <td class="py-1.5 px-2 font-mono font-bold">${item.code}</td>
+                        <td class="py-1.5 px-2 font-bold">${item.name}</td>
+                        <td class="py-1.5 px-2 text-slate-500">${item.sup}</td>
+                        <td class="py-1.5 px-2 text-slate-500">${item.spec}</td>
+                        <td class="py-1.5 px-2 font-black">${item.qty} ${item.unit}</td>
+                        <td class="py-1.5 px-2 text-blue-700">${item.loc}</td>
+                    </tr>
+                `).join('');
+            }
 
             document.getElementById('bulk-preview-container')?.classList.remove('hidden');
-            document.getElementById('btn-commit-bulk').disabled = staging.length === 0;
+            const btnCommit = document.getElementById('btn-commit-bulk');
+            if(btnCommit) btnCommit.disabled = staging.length === 0;
         }
 
         function commitBulkImport() {
@@ -5004,7 +4953,6 @@
             }
         }
 
-        /* ==================== 모바일 접속 QR 및 백업/복원 ==================== */
         function openMobileAccessModal() {
             const input = document.getElementById('mobile-url-input');
             const cleanUrl = window.location.href.split('?')[0].split('#')[0];
@@ -5111,7 +5059,6 @@
             e.target.value = "";
         }
 
-        /* ==================== 시스템 초기화 ==================== */
         window.onload = function() {
             loadStateFromStorage();
 
@@ -5149,7 +5096,6 @@
                 renderScannedDetailView(inventoryDB[0]);
             }
 
-            // 당월 셀렉터 기본값 맞춤
             const now = new Date();
             const ySelect = document.getElementById('analytics-select-year');
             const mSelect = document.getElementById('analytics-select-month');
@@ -5165,7 +5111,6 @@
                 `).join('');
             }
 
-            // URL 딥링크 스캔 파라미터 감지 (?scan=ITEM-1001)
             const urlParams = new URLSearchParams(window.location.search);
             const scanParam = urlParams.get('scan');
             if (scanParam) {
@@ -5175,7 +5120,6 @@
                 switchTab('scan');
             }
 
-            // 검색창 외부 클릭 시 드롭다운 닫기
             document.addEventListener('click', (e) => {
                 const sDropdown = document.getElementById('search-suggestions-dropdown');
                 const sInput = document.getElementById('manual-scan-input');
