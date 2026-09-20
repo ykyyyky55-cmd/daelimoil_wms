@@ -75,6 +75,23 @@
                         class="bg-transparent border-none text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
                     </select>
                 </div>
+                <!-- 로그인 계정 프로필 & 권한 관리 뱃지 -->
+                <div id="auth-profile-badge" class="flex items-center gap-1.5 bg-slate-900 text-white rounded-lg px-2.5 py-1 text-xs shadow-xs">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span id="auth-user-name" class="font-bold">관리자</span>
+                    <span id="auth-user-role-badge" class="px-1.5 py-0.2 rounded text-[10px] font-black bg-blue-600 text-white">ADMIN</span>
+                    <button type="button" onclick="logoutUser()" class="ml-1 p-0.5 text-slate-400 hover:text-rose-400 transition" title="로그아웃">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                <button type="button" id="btn-user-mgmt" onclick="openUserMgmtModal()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-indigo-600/20">
+                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                    <span>권한/계정 관리</span>
+                </button>
+                <button type="button" id="btn-auth-login" onclick="openAuthModal('LOGIN')" class="hidden px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+                    <span>로그인 / 등록</span>
+                </button>
                 <button type="button" onclick="switchTab('audit')" class="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-teal-600/20">
                     <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i>
                     <span>재고실사 / 실재고 등록</span>
@@ -2426,6 +2443,238 @@
         </div>
     </div>
 
+    <!-- 모달: 로그인 및 회원등록 모달 -->
+    <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+            <!-- 모달 헤더 -->
+            <div class="p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md">
+                        <i data-lucide="lock" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h4 id="auth-modal-title" class="font-black text-sm">WMS 보안 로그인 & 사용자 인증</h4>
+                        <p class="text-[10px] text-slate-400">시스템 이용 권한을 확인하기 위해 로그인해주세요.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAuthModal()" class="text-white/70 hover:text-white transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- 탭 전환 버튼 (로그인 vs 회원등록) -->
+            <div class="flex border-b border-slate-200 bg-slate-50 text-xs">
+                <button type="button" id="auth-tab-login-btn" onclick="switchAuthTab('LOGIN')" class="flex-1 py-3 font-bold text-blue-600 border-b-2 border-blue-600 bg-white transition">
+                    로그인
+                </button>
+                <button type="button" id="auth-tab-register-btn" onclick="switchAuthTab('REGISTER')" class="flex-1 py-3 font-bold text-slate-500 hover:text-slate-800 transition">
+                    신규 사용자 등록
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4 text-xs">
+                <!-- 로그인 폼 영역 -->
+                <div id="auth-form-login" class="space-y-3.5">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">사용자 아이디 / 사번 *</label>
+                        <input type="text" id="login-username" placeholder="예: admin, manager, worker" 
+                            onkeydown="if(event.key==='Enter') executeLogin()"
+                            class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">비밀번호 *</label>
+                        <input type="password" id="login-password" placeholder="비밀번호를 입력하세요" 
+                            onkeydown="if(event.key==='Enter') executeLogin()"
+                            class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                    </div>
+
+                    <button type="button" onclick="executeLogin()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20">
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                        <span>로그인</span>
+                    </button>
+
+                    <!-- 원클릭 테스트 계정 간편 로그인 -->
+                    <div class="pt-3 border-t border-slate-200">
+                        <span class="text-[11px] font-bold text-slate-500 block mb-2">⚡ 빠른 테스트 로그인 (원클릭 권한 전환):</span>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <button type="button" onclick="quickLoginAs('admin')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold text-left flex items-center justify-between border border-slate-200 transition">
+                                <span>👑 총괄 관리자</span>
+                                <span class="text-[9px] text-blue-600 font-black">ADMIN</span>
+                            </button>
+                            <button type="button" onclick="quickLoginAs('manager')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold text-left flex items-center justify-between border border-slate-200 transition">
+                                <span>📦 물류 관리자</span>
+                                <span class="text-[9px] text-indigo-600 font-black">MANAGER</span>
+                            </button>
+                            <button type="button" onclick="quickLoginAs('worker')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold text-left flex items-center justify-between border border-slate-200 transition">
+                                <span>🛠️ 현장 작업자</span>
+                                <span class="text-[9px] text-teal-600 font-black">OPERATOR</span>
+                            </button>
+                            <button type="button" onclick="quickLoginAs('viewer')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold text-left flex items-center justify-between border border-slate-200 transition">
+                                <span>👁️ 조회 전용</span>
+                                <span class="text-[9px] text-slate-500 font-black">VIEWER</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 회원 등록 폼 영역 -->
+                <div id="auth-form-register" class="hidden space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">사용자 이름 *</label>
+                            <input type="text" id="reg-name" placeholder="예: 박자재" class="w-full px-2.5 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">아이디(사번) *</label>
+                            <input type="text" id="reg-username" placeholder="예: EMP-005" class="w-full px-2.5 py-2 border border-slate-300 rounded-xl bg-white font-mono focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">소속 부서/팀</label>
+                            <input type="text" id="reg-dept" placeholder="예: 물류2팀" class="w-full px-2.5 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">초기 권한 등급 *</label>
+                            <select id="reg-role" class="w-full px-2.5 py-2 border border-slate-300 rounded-xl bg-white font-bold text-slate-800 focus:ring-2 focus:ring-blue-500">
+                                <option value="OPERATOR">🛠️ 현장 작업자 (Operator)</option>
+                                <option value="MANAGER">📦 물류 관리자 (Manager)</option>
+                                <option value="VIEWER">👁️ 조회 전용 (Viewer)</option>
+                                <option value="ADMIN">👑 시스템 관리자 (Admin)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">비밀번호 설정 *</label>
+                        <input type="password" id="reg-password" placeholder="비밀번호를 입력하세요" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">비밀번호 확인 *</label>
+                        <input type="password" id="reg-password-confirm" placeholder="비밀번호를 다시 입력하세요" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <button type="button" onclick="executeRegister()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        <span>신규 계정 등록 및 자동 로그인</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모달: 사용자 계정 및 권한 설정 관리 모달 -->
+    <div id="user-mgmt-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-6">
+            <div class="p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md">
+                        <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-black text-base sm:text-lg">사용자 계정 & 직무별 접근 권한 설정 (RBAC)</h4>
+                            <span class="px-2 py-0.5 text-[10px] font-bold bg-indigo-500/30 text-indigo-300 border border-indigo-400/30 rounded-full">SECURITY V4</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-0.5">직무(관리자, 물류담당자, 현장작업자, 조회전용)에 따라 실행할 수 있는 메뉴 및 업무 처리 권한을 통제합니다.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeUserMgmtModal()" class="text-white/80 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6 text-xs max-h-[80vh] overflow-y-auto">
+                <!-- 권한 등급별 업무 허용 매트릭스 안내 카드 -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                    <span class="font-bold text-slate-900 block text-sm flex items-center gap-1.5">
+                        <i data-lucide="sliders" class="w-4 h-4 text-indigo-600"></i>
+                        <span>권한 등급별 업무 제한 및 실행 규칙 (Permission Matrix)</span>
+                    </span>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold">
+                                <tr>
+                                    <th class="py-2.5 px-3">권한 등급</th>
+                                    <th class="py-2.5 px-3 text-center">현장 수불 (입·출고/사용)</th>
+                                    <th class="py-2.5 px-3 text-center">라벨 발행/출력</th>
+                                    <th class="py-2.5 px-3 text-center">품목 마스터 등록/수정</th>
+                                    <th class="py-2.5 px-3 text-center">재고 실사/오차 조정</th>
+                                    <th class="py-2.5 px-3 text-center">발주/생산 검토(MRP)</th>
+                                    <th class="py-2.5 px-3 text-center">백업/복원 및 계정관리</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-slate-800">
+                                <tr>
+                                    <td class="py-2 px-3 font-bold text-blue-700">👑 시스템 관리자 (ADMIN)</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2 px-3 font-bold text-indigo-700">📦 물류 관리자 (MANAGER)</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">등록/수정</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">실사 반영</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">전체 허용</td>
+                                    <td class="py-2 px-3 text-center text-rose-500 font-bold">제한 (관리자전용)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2 px-3 font-bold text-teal-700">🛠️ 현장 작업자 (OPERATOR)</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">입·출고·이동·사용</td>
+                                    <td class="py-2 px-3 text-center text-emerald-600 font-bold">라벨 인쇄 허용</td>
+                                    <td class="py-2 px-3 text-center text-rose-500 font-bold">수정/삭제 제한</td>
+                                    <td class="py-2 px-3 text-center text-amber-600 font-bold">실사값 입력만</td>
+                                    <td class="py-2 px-3 text-center text-slate-500">조회 가능</td>
+                                    <td class="py-2 px-3 text-center text-rose-500 font-bold">제한</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2 px-3 font-bold text-slate-600">👁️ 조회 전용 게스트 (VIEWER)</td>
+                                    <td class="py-2 px-3 text-center text-rose-500 font-bold">수불 처리 금지</td>
+                                    <td class="py-2 px-3 text-center text-slate-500">미리보기만</td>
+                                    <td class="py-2 px-3 text-center text-rose-500 font-bold">읽기 전용</td>
+                                    <td class="py-2 px-3 text-center text-rose-500 font-bold">읽기 전용</td>
+                                    <td class="py-2 px-3 text-center text-slate-500">조회 가능</td>
+                                    <td class="py-2 px-3 text-center text-rose-500 font-bold">제한</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 등록된 사용자 계정 및 권한 변경 테이블 -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-900 text-sm">등록된 사용자 계정 목록 (<span id="user-total-count">0</span>명)</span>
+                        <button type="button" onclick="openAuthModal('REGISTER')" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-xs">
+                            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                            <span>+ 신규 계정 추가</span>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold">
+                                <tr>
+                                    <th class="py-2.5 px-3">이름</th>
+                                    <th class="py-2.5 px-3">아이디 (사번)</th>
+                                    <th class="py-2.5 px-3">소속 부서</th>
+                                    <th class="py-2.5 px-3">현재 권한 등급</th>
+                                    <th class="py-2.5 px-3">권한 등급 변경</th>
+                                    <th class="py-2.5 px-3 text-center">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-mgmt-tbody" class="divide-y divide-slate-100 text-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 토스트 알림창 컨테이너 -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -2433,6 +2682,17 @@
         /* ==================== 전역 상태 데이터 ==================== */
         let categoriesDB = ["완제품", "원료", "부자재"];
         let locationsDB = ["김포공장 A동", "김포2공장 B동", "인천 물류센터", "화성 자재창고"];
+
+        /* 사용자 계정 DB (초기 데모 계정 포함) */
+        let usersDB = [
+            { id: "admin", name: "홍길동", username: "admin", password: "admin123", role: "ADMIN", dept: "물류관리팀", title: "총괄 관리자" },
+            { id: "manager", name: "김물류", username: "manager", password: "manager123", role: "MANAGER", dept: "자재운영팀", title: "물류 반장" },
+            { id: "worker", name: "이작업", username: "worker", password: "worker123", role: "OPERATOR", dept: "생산조립팀", title: "현장 기사" },
+            { id: "viewer", name: "박게스트", username: "viewer", password: "viewer123", role: "VIEWER", dept: "경영기획팀", title: "조회 담당" }
+        ];
+
+        /* 현재 로그인된 사용자 */
+        let currentUser = usersDB[0]; // 기본 관리자 로그인 상태
 
         /* 작업자 DB */
         let workersDB = [
@@ -2530,6 +2790,8 @@
                 localStorage.setItem('wms_schedules', JSON.stringify(schedulesDB));
                 localStorage.setItem('wms_home_widgets', JSON.stringify(homeWidgetsState));
                 localStorage.setItem('wms_global_worker', currentGlobalWorker);
+                localStorage.setItem('wms_users', JSON.stringify(usersDB));
+                localStorage.setItem('wms_current_user_id', currentUser ? currentUser.username : '');
             } catch (e) {
                 console.warn("Storage save failed:", e);
             }
@@ -2549,9 +2811,352 @@
                 if (gw) {
                     currentGlobalWorker = gw;
                 }
+                const u = localStorage.getItem('wms_users');
+                if (u) usersDB = JSON.parse(u);
+                const curId = localStorage.getItem('wms_current_user_id');
+                if (curId) {
+                    const matchUser = usersDB.find(usr => usr.username === curId);
+                    if (matchUser) currentUser = matchUser;
+                }
             } catch (e) {
                 console.warn("Storage load error:", e);
             }
+        }
+
+        /* ==================== 사용자 인증 및 권한 제어 (RBAC) 로직 ==================== */
+        function openAuthModal(initialTab = 'LOGIN') {
+            switchAuthTab(initialTab);
+            document.getElementById('auth-modal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal')?.classList.add('hidden');
+        }
+
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('auth-form-login');
+            const regForm = document.getElementById('auth-form-register');
+            const loginBtn = document.getElementById('auth-tab-login-btn');
+            const regBtn = document.getElementById('auth-tab-register-btn');
+            const title = document.getElementById('auth-modal-title');
+
+            if (tab === 'LOGIN') {
+                loginForm?.classList.remove('hidden');
+                regForm?.classList.add('hidden');
+                loginBtn?.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'bg-white');
+                loginBtn?.classList.remove('text-slate-500');
+                regBtn?.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'bg-white');
+                regBtn?.classList.add('text-slate-500');
+                if (title) title.innerText = "WMS 보안 로그인 & 사용자 인증";
+            } else {
+                loginForm?.classList.add('hidden');
+                regForm?.classList.remove('hidden');
+                regBtn?.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'bg-white');
+                regBtn?.classList.remove('text-slate-500');
+                loginBtn?.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'bg-white');
+                loginBtn?.classList.add('text-slate-500');
+                if (title) title.innerText = "WMS 신규 사용자 계정 등록";
+            }
+        }
+
+        function executeLogin() {
+            const username = document.getElementById('login-username')?.value.trim();
+            const password = document.getElementById('login-password')?.value.trim();
+
+            if (!username || !password) {
+                showToast("아이디와 비밀번호를 모두 입력해주세요.", "warning");
+                return;
+            }
+
+            const foundUser = usersDB.find(u => u.username.toLowerCase() === username.toLowerCase());
+            if (!foundUser || foundUser.password !== password) {
+                showToast("아이디 또는 비밀번호가 일치하지 않습니다.", "error");
+                return;
+            }
+
+            currentUser = foundUser;
+            currentGlobalWorker = `${foundUser.name} (${foundUser.title || foundUser.dept || foundUser.role})`;
+            saveStateToStorage();
+            closeAuthModal();
+            updateAuthHeaderUI();
+            applyRoleRestrictions();
+            populateWorkerSelects();
+            showToast(`[${foundUser.name}]님 (${foundUser.role} 권한) 환영합니다!`, "success");
+        }
+
+        function quickLoginAs(roleKey) {
+            const user = usersDB.find(u => u.username === roleKey);
+            if (user) {
+                currentUser = user;
+                currentGlobalWorker = `${user.name} (${user.title || user.role})`;
+                saveStateToStorage();
+                closeAuthModal();
+                updateAuthHeaderUI();
+                applyRoleRestrictions();
+                populateWorkerSelects();
+                showToast(`[${user.name}] (${user.role}) 계정으로 즉시 로그인되었습니다.`, "success");
+            }
+        }
+
+        function logoutUser() {
+            currentUser = null;
+            saveStateToStorage();
+            updateAuthHeaderUI();
+            applyRoleRestrictions();
+            showToast("안전하게 로그아웃되었습니다.", "info");
+            openAuthModal('LOGIN');
+        }
+
+        function executeRegister() {
+            const name = document.getElementById('reg-name')?.value.trim();
+            const username = document.getElementById('reg-username')?.value.trim();
+            const dept = document.getElementById('reg-dept')?.value.trim() || '물류운영팀';
+            const role = document.getElementById('reg-role')?.value || 'OPERATOR';
+            const pw = document.getElementById('reg-password')?.value.trim();
+            const pwConfirm = document.getElementById('reg-password-confirm')?.value.trim();
+
+            if (!name || !username || !pw) {
+                showToast("이름, 아이디, 비밀번호는 필수 입력입니다.", "warning");
+                return;
+            }
+            if (pw !== pwConfirm) {
+                showToast("비밀번호 확인이 일치하지 않습니다.", "warning");
+                return;
+            }
+            if (usersDB.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                showToast("이미 등록된 아이디(사번)입니다.", "warning");
+                return;
+            }
+
+            const newUser = {
+                id: `USR-${Date.now()}`,
+                name,
+                username,
+                password: pw,
+                role,
+                dept,
+                title: role === 'ADMIN' ? '관리자' : role === 'MANAGER' ? '담당자' : role === 'OPERATOR' ? '기사' : '조회원'
+            };
+
+            usersDB.push(newUser);
+            if (!workersDB.some(w => w.name === name)) {
+                workersDB.push({ id: username, name, dept, role: newUser.title });
+            }
+
+            currentUser = newUser;
+            currentGlobalWorker = `${name} (${newUser.title})`;
+            saveStateToStorage();
+            closeAuthModal();
+            updateAuthHeaderUI();
+            applyRoleRestrictions();
+            populateWorkerSelects();
+            showToast(`신규 계정 [${name}] 등록 및 자동 로그인 완료!`, "success");
+        }
+
+        function updateAuthHeaderUI() {
+            const profileBadge = document.getElementById('auth-profile-badge');
+            const loginBtn = document.getElementById('btn-auth-login');
+            const nameEl = document.getElementById('auth-user-name');
+            const roleBadge = document.getElementById('auth-user-role-badge');
+            const userMgmtBtn = document.getElementById('btn-user-mgmt');
+
+            if (currentUser) {
+                profileBadge?.classList.remove('hidden');
+                loginBtn?.classList.add('hidden');
+                if (nameEl) nameEl.innerText = currentUser.name;
+                if (roleBadge) {
+                    roleBadge.innerText = currentUser.role;
+                    roleBadge.className = currentUser.role === 'ADMIN' ? 'px-1.5 py-0.2 rounded text-[10px] font-black bg-rose-600 text-white' :
+                                         currentUser.role === 'MANAGER' ? 'px-1.5 py-0.2 rounded text-[10px] font-black bg-indigo-600 text-white' :
+                                         currentUser.role === 'OPERATOR' ? 'px-1.5 py-0.2 rounded text-[10px] font-black bg-emerald-600 text-white' :
+                                         'px-1.5 py-0.2 rounded text-[10px] font-black bg-slate-600 text-white';
+                }
+                if (userMgmtBtn) {
+                    if (currentUser.role === 'ADMIN') {
+                        userMgmtBtn.classList.remove('hidden');
+                    } else {
+                        userMgmtBtn.classList.add('hidden');
+                    }
+                }
+            } else {
+                profileBadge?.classList.add('hidden');
+                loginBtn?.classList.remove('hidden');
+                if (userMgmtBtn) userMgmtBtn.classList.add('hidden');
+            }
+        }
+
+        function hasPermission(permissionKey) {
+            if (!currentUser) return false;
+            const role = currentUser.role;
+
+            if (role === 'ADMIN') return true;
+
+            if (role === 'MANAGER') {
+                if (['SYSTEM_BACKUP', 'USER_MANAGEMENT', 'MASTER_DELETE'].includes(permissionKey)) {
+                    return false;
+                }
+                return true;
+            }
+
+            if (role === 'OPERATOR') {
+                const operatorAllowed = ['HOME_VIEW', 'SCAN_EXECUTE', 'LABEL_PRINT', 'CALENDAR_VIEW', 'CALENDAR_ADD', 'INVENTORY_VIEW', 'AUDIT_COUNT_INPUT'];
+                return operatorAllowed.includes(permissionKey);
+            }
+
+            if (role === 'VIEWER') {
+                const viewerAllowed = ['HOME_VIEW', 'INVENTORY_VIEW', 'CALENDAR_VIEW', 'LEDGER_VIEW', 'ANALYTICS_VIEW', 'PLANNING_VIEW'];
+                return viewerAllowed.includes(permissionKey);
+            }
+
+            return false;
+        }
+
+        function applyRoleRestrictions() {
+            const role = currentUser ? currentUser.role : 'GUEST';
+
+            // 1. 마스터 관리 버튼 제어
+            const masterAddBtn = document.querySelector("button[onclick=\"openMasterModal('NEW')\"]");
+            if (masterAddBtn) {
+                if (hasPermission('MASTER_EDIT')) {
+                    masterAddBtn.classList.remove('hidden');
+                } else {
+                    masterAddBtn.classList.add('hidden');
+                }
+            }
+
+            // 2. 엑셀 대량 일괄 등록 버튼 제어
+            const bulkBtns = document.querySelectorAll("button[onclick=\"openBulkImportModal()\"]");
+            bulkBtns.forEach(btn => {
+                if (hasPermission('BULK_IMPORT')) {
+                    btn.classList.remove('opacity-40', 'pointer-events-none');
+                } else {
+                    btn.classList.add('opacity-40', 'pointer-events-none');
+                    btn.title = "관리자 전용 기능입니다.";
+                }
+            });
+
+            // 3. 백업/복원 버튼 제어
+            const backupBtn = document.querySelector("button[onclick=\"openBackupModal()\"]");
+            if (backupBtn) {
+                if (hasPermission('SYSTEM_BACKUP')) {
+                    backupBtn.classList.remove('hidden');
+                } else {
+                    backupBtn.classList.add('hidden');
+                }
+            }
+
+            // 4. 재고실사 일괄 반영 버튼 제어
+            const auditCommitBtn = document.querySelector("button[onclick=\"commitAllAuditAdjustments()\"]");
+            if (auditCommitBtn) {
+                if (hasPermission('AUDIT_COMMIT')) {
+                    auditCommitBtn.classList.remove('opacity-40', 'pointer-events-none');
+                } else {
+                    auditCommitBtn.classList.add('opacity-40', 'pointer-events-none');
+                    auditCommitBtn.title = "물류 관리자 또는 시스템 관리자 권한이 필요합니다.";
+                }
+            }
+
+            // 5. 수불 처리 모달 버튼 비활성화 (VIEWER인 경우)
+            const actionSubmitBtn = document.getElementById('action-submit-btn');
+            if (actionSubmitBtn) {
+                if (role === 'VIEWER') {
+                    actionSubmitBtn.disabled = true;
+                    actionSubmitBtn.innerText = "조회 전용 (수불 처리 불가)";
+                    actionSubmitBtn.className = "w-2/3 py-2.5 bg-slate-300 text-slate-500 rounded-xl font-bold cursor-not-allowed";
+                } else {
+                    actionSubmitBtn.disabled = false;
+                    actionSubmitBtn.innerText = "작업 확정";
+                    actionSubmitBtn.className = "w-2/3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-sm";
+                }
+            }
+        }
+
+        function openUserMgmtModal() {
+            if (!currentUser || currentUser.role !== 'ADMIN') {
+                showToast("시스템 관리자(ADMIN) 권한이 필요합니다.", "warning");
+                return;
+            }
+            renderUserMgmtList();
+            document.getElementById('user-mgmt-modal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeUserMgmtModal() {
+            document.getElementById('user-mgmt-modal')?.classList.add('hidden');
+        }
+
+        function renderUserMgmtList() {
+            const tbody = document.getElementById('user-mgmt-tbody');
+            const totalCountEl = document.getElementById('user-total-count');
+            if (!tbody) return;
+
+            if (totalCountEl) totalCountEl.innerText = usersDB.length;
+
+            tbody.innerHTML = usersDB.map(u => {
+                const isCurrent = currentUser && currentUser.username === u.username;
+                let roleColor = u.role === 'ADMIN' ? 'bg-rose-100 text-rose-800' :
+                                u.role === 'MANAGER' ? 'bg-indigo-100 text-indigo-800' :
+                                u.role === 'OPERATOR' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-2.5 px-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900">${u.name}</span>
+                                ${isCurrent ? '<span class="px-1.5 py-0.2 bg-blue-600 text-white rounded text-[9px] font-black">나</span>' : ''}
+                            </div>
+                        </td>
+                        <td class="py-2.5 px-3 font-mono text-slate-600">${u.username}</td>
+                        <td class="py-2.5 px-3 text-slate-600">${u.dept || '-'}</td>
+                        <td class="py-2.5 px-3">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${roleColor}">${u.role}</span>
+                        </td>
+                        <td class="py-2.5 px-3">
+                            <select onchange="changeUserRole('${u.username}', this.value)" 
+                                class="px-2 py-1 text-xs border border-slate-300 rounded-lg bg-white font-medium"
+                                ${isCurrent && u.role === 'ADMIN' ? 'disabled title="현재 로그인한 관리자 본인은 변경할 수 없습니다."' : ''}>
+                                <option value="ADMIN" ${u.role === 'ADMIN' ? 'selected' : ''}>👑 시스템 관리자 (ADMIN)</option>
+                                <option value="MANAGER" ${u.role === 'MANAGER' ? 'selected' : ''}>📦 물류 관리자 (MANAGER)</option>
+                                <option value="OPERATOR" ${u.role === 'OPERATOR' ? 'selected' : ''}>🛠️ 현장 작업자 (OPERATOR)</option>
+                                <option value="VIEWER" ${u.role === 'VIEWER' ? 'selected' : ''}>👁️ 조회 전용 (VIEWER)</option>
+                            </select>
+                        </td>
+                        <td class="py-2.5 px-3 text-center">
+                            <button type="button" onclick="deleteUserAccount('${u.username}')" 
+                                class="p-1 text-rose-500 hover:bg-rose-50 rounded transition disabled:opacity-30" 
+                                title="계정 삭제"
+                                ${isCurrent || u.username === 'admin' ? 'disabled' : ''}>
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function changeUserRole(username, newRole) {
+            const target = usersDB.find(u => u.username === username);
+            if (!target) return;
+
+            target.role = newRole;
+            saveStateToStorage();
+            renderUserMgmtList();
+            applyRoleRestrictions();
+            showToast(`[${target.name}]님의 권한이 '${newRole}'(으)로 갱신되었습니다.`, "success");
+        }
+
+        function deleteUserAccount(username) {
+            if (usersDB.length <= 1) {
+                showToast("최소 1개 이상의 관리자 계정이 유지되어야 합니다.", "warning");
+                return;
+            }
+            usersDB = usersDB.filter(u => u.username !== username);
+            saveStateToStorage();
+            renderUserMgmtList();
+            showToast("사용자 계정이 삭제되었습니다.", "info");
         }
 
         function changeGlobalWorker(val) {
@@ -2875,6 +3480,10 @@
         }
 
         function commitSingleAuditAdjustment(code, location) {
+            if (!hasPermission('AUDIT_COMMIT')) {
+                showToast("오차 전산 반영은 관리자(ADMIN, MANAGER) 권한이 필요합니다.", "warning");
+                return;
+            }
             const key = `${code}_${location}`;
             const auditData = stockAuditWorkingMap[key];
             if (!auditData || auditData.actualQty === undefined) {
@@ -2917,6 +3526,10 @@
         }
 
         function commitAllAuditAdjustments() {
+            if (!hasPermission('AUDIT_COMMIT')) {
+                showToast("일괄 실사 반영은 관리자(ADMIN, MANAGER) 권한이 필요합니다.", "warning");
+                return;
+            }
             let adjustedCount = 0;
             const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
 
@@ -5361,6 +5974,10 @@
         }
 
         function openMasterModal(mode, code = '') {
+            if (!hasPermission('MASTER_EDIT')) {
+                showToast("품목 마스터 등록 및 수정은 관리자 권한이 필요합니다.", "warning");
+                return;
+            }
             editingMasterCode = mode === 'EDIT' ? code : null;
             const modal = document.getElementById('master-edit-modal');
             const title = document.getElementById('master-modal-title');
@@ -5448,6 +6065,10 @@
         }
 
         function deleteMasterItem(code) {
+            if (!hasPermission('MASTER_DELETE')) {
+                showToast("품목 마스터 삭제는 총괄 관리자(ADMIN) 전용입니다.", "warning");
+                return;
+            }
             masterDB = masterDB.filter(m => m.code !== code);
             inventoryDB = inventoryDB.filter(i => i.code !== code);
             saveStateToStorage();
@@ -6164,6 +6785,10 @@
         }
 
         function openBulkImportModal() {
+            if (!hasPermission('BULK_IMPORT')) {
+                showToast("엑셀/시트 대량 등록은 관리자 권한이 필요합니다.", "warning");
+                return;
+            }
             document.getElementById('bulk-import-modal')?.classList.remove('hidden');
             if (window.lucide) lucide.createIcons();
         }
@@ -6430,6 +7055,10 @@
         }
 
         function openBackupModal() {
+            if (!hasPermission('SYSTEM_BACKUP')) {
+                showToast("시스템 백업 및 복원은 총괄 관리자(ADMIN) 전용입니다.", "warning");
+                return;
+            }
             document.getElementById('backup-modal')?.classList.remove('hidden');
         }
         function closeBackupModal() {
@@ -6538,6 +7167,9 @@
             populateLocationSelects();
             populateWorkerSelects();
             populateLedgerItemSelect();
+
+            updateAuthHeaderUI();
+            applyRoleRestrictions();
 
             renderHomeDashboard();
             renderMasterTable();
