@@ -75,6 +75,10 @@
                         class="bg-transparent border-none text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
                     </select>
                 </div>
+                <button type="button" onclick="switchTab('audit')" class="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-teal-600/20">
+                    <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i>
+                    <span>재고실사 / 실재고 등록</span>
+                </button>
                 <button type="button" onclick="openWorkerManagerModal()" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-blue-600/20">
                     <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
                     <span>작업자 등록/관리</span>
@@ -131,6 +135,13 @@
             <button type="button" onclick="switchTab('inventory')" id="tab-btn-inventory" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
                 <i data-lucide="database" class="w-4 h-4"></i>
                 <span>창고 재고 현황</span>
+            </button>
+            <button type="button" onclick="switchTab('audit')" id="tab-btn-audit" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
+                <i data-lucide="clipboard-check" class="w-4 h-4 text-teal-600"></i>
+                <span class="flex items-center gap-1">
+                    <span class="font-bold text-teal-700">재고실사 / 조사</span>
+                    <span id="nav-audit-diff-badge" class="hidden px-1.5 py-0.2 text-[9px] font-extrabold bg-rose-100 text-rose-700 rounded-full">오차</span>
+                </span>
             </button>
             <button type="button" onclick="switchTab('ledger')" id="tab-btn-ledger" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
                 <i data-lucide="book-open-check" class="w-4 h-4"></i>
@@ -864,6 +875,10 @@
                         <p class="text-xs text-slate-500 mt-0.5">공장 및 거점별 실시간 보관 수량 및 안전재고 결품 경고</p>
                     </div>
                     <div class="flex items-center gap-2">
+                        <button type="button" onclick="switchTab('audit')" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                            <i data-lucide="clipboard-check" class="w-4 h-4 text-teal-600"></i>
+                            <span>전수 재고실사 진행</span>
+                        </button>
                         <span id="inv-total-summary-badge" class="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs font-bold">
                             총 0개 품목 / 0개 수량
                         </span>
@@ -896,6 +911,134 @@
                             </tr>
                         </thead>
                         <tbody id="inventory-table-tbody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: 재고실사 / 실재고량 조사 및 등록 -->
+        <section id="tab-content-audit" class="tab-section hidden space-y-4">
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center border border-teal-200 shadow-xs">
+                            <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-base sm:text-lg font-black text-slate-900">현장 재고조사 및 실재고량 등록 (Stock Audit)</h3>
+                                <span class="px-2 py-0.5 text-[10px] font-bold bg-teal-100 text-teal-800 rounded-full border border-teal-200">전산 vs 실재고 대조</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5">현장에서 실제 카운팅한 실재고량을 입력하면 전산 재고와의 오차(과부족)를 분석하고 클릭 한 번으로 전산 재고를 실사값에 맞춰 자동 조정합니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center flex-wrap gap-2">
+                        <button type="button" onclick="exportAuditReportToCSV()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                            <span>실사표 CSV 다운로드</span>
+                        </button>
+                        <button type="button" onclick="printStockAuditSheet()" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                            <span>현장 실사지 인쇄</span>
+                        </button>
+                        <button type="button" onclick="commitAllAuditAdjustments()" class="px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-teal-600/20">
+                            <i data-lucide="check-check" class="w-4 h-4"></i>
+                            <span>오차 품목 전산 일괄 반영</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 재고실사 요약 현황 KPI 카드 -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+                        <span class="text-slate-500 font-bold block text-[11px]">실사 대상 품목</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="audit-kpi-total-items" class="text-2xl font-black text-slate-900">0</span>
+                            <span class="text-slate-400 font-medium">건</span>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-50/70 border border-emerald-200 p-3 rounded-xl">
+                        <span class="text-emerald-800 font-bold block text-[11px]">수량 일치 (정상)</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="audit-kpi-matched-count" class="text-2xl font-black text-emerald-600">0</span>
+                            <span class="text-emerald-700 font-medium">건</span>
+                        </div>
+                    </div>
+                    <div class="bg-rose-50/70 border border-rose-200 p-3 rounded-xl">
+                        <span class="text-rose-800 font-bold block text-[11px]">오차 발생 (과부족)</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="audit-kpi-diff-count" class="text-2xl font-black text-rose-600">0</span>
+                            <span class="text-rose-700 font-medium">건 불일치</span>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50/70 border border-blue-200 p-3 rounded-xl">
+                        <span class="text-blue-800 font-bold block text-[11px]">총 오차 수량 (Net)</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="audit-kpi-net-diff" class="text-2xl font-black text-blue-700 font-mono">0</span>
+                            <span class="text-blue-600 font-medium">EA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 필터 및 실사 작업 설정 바 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-2 text-xs items-end bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="md:col-span-3">
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">실사 대상 거점</label>
+                        <select id="audit-filter-location" onchange="renderStockAuditTable()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white font-medium"></select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">품목 분류</label>
+                        <select id="audit-filter-category" onchange="renderStockAuditTable()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white font-medium"></select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">조사 상태 필터</label>
+                        <select id="audit-filter-status" onchange="renderStockAuditTable()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white font-medium">
+                            <option value="">전체 상태</option>
+                            <option value="DIFF">⚠️ 오차 발생 품목만</option>
+                            <option value="MATCH">✅ 수량 일치 품목만</option>
+                            <option value="UNCOUNTED">🕒 미입력 품목만</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">품목명 / 코드 빠른 검색</label>
+                        <input type="text" id="audit-search-input" oninput="renderStockAuditTable()" placeholder="품목명, 코드, 거래처..." class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-teal-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="button" onclick="fillActualWithBookStock()" class="w-full py-1.5 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg font-bold transition flex items-center justify-center gap-1 shadow-xs" title="현재 전산재고 수량으로 실재고 입력칸 일괄 채우기">
+                            <i data-lucide="copy-check" class="w-3.5 h-3.5 text-teal-600"></i>
+                            <span>전산재고 복사</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 재고실사 대조 테이블 -->
+                <div id="printable-audit-sheet" class="printable-area overflow-x-auto rounded-xl border border-slate-200">
+                    <div class="hidden print:block p-4 border-b-2 border-slate-900 mb-2">
+                        <h2 class="text-xl font-black text-slate-900">현 장 재 고 실 사 조 사 표</h2>
+                        <div class="text-xs text-slate-600 mt-1 flex justify-between">
+                            <span>실사 일자: <strong id="print-audit-date">2026-09-20</strong></span>
+                            <span>실사 담당자: <strong id="print-audit-worker">홍길동</strong></span>
+                            <span>실사 거점: <strong id="print-audit-location">전체 거점</strong></span>
+                        </div>
+                    </div>
+
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 text-slate-700 border-b border-slate-300">
+                            <tr>
+                                <th class="py-2.5 px-3 font-semibold">구분</th>
+                                <th class="py-2.5 px-3 font-semibold">품목코드</th>
+                                <th class="py-2.5 px-3 font-semibold">품목명</th>
+                                <th class="py-2.5 px-3 font-semibold">보관 거점</th>
+                                <th class="py-2.5 px-3 font-semibold text-right bg-slate-200/60">전산재고 (장부)</th>
+                                <th class="py-2.5 px-3 font-semibold text-center bg-teal-50/80 text-teal-900 w-36">실제 조사수량 (실재고)</th>
+                                <th class="py-2.5 px-3 font-semibold text-right">실사 오차 (차이)</th>
+                                <th class="py-2.5 px-3 font-semibold w-40">실사 조정 사유</th>
+                                <th class="py-2.5 px-3 font-semibold text-center no-print w-24">전산 반영</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-table-tbody" class="divide-y divide-slate-200 text-slate-800"></tbody>
+                        <tfoot id="audit-table-tfoot" class="bg-slate-50 font-bold text-slate-900 border-t-2 border-slate-300"></tfoot>
                     </table>
                 </div>
             </div>
@@ -2066,6 +2209,8 @@
 
         let currentGlobalWorker = "홍길동 (관리자)";
 
+        let stockAuditWorkingMap = {}; // key: `${code}_${location}` -> { actualQty, reason }
+
         let historyDB = [
             { id: 1, timestamp: "2026-09-20 14:30", type: "IN", code: "ITEM-1001", name: "스테인리스 육각볼트", qty: 80, worker: "홍길동 (관리자)", fromLoc: "-", toLoc: "김포공장 A동", reason: "정기 구매 입고" },
             { id: 2, timestamp: "2026-09-20 11:15", type: "USE", code: "ITEM-1002", name: "산업용 서보 모터", qty: 2, worker: "김생산 기사", fromLoc: "김포2공장 B동", toLoc: "-", reason: "생산 2라인 긴급 조립 투입" },
@@ -2191,6 +2336,7 @@
                 case 'MOVE': return `<span class="text-amber-700 font-bold">이동</span>`;
                 case 'OUT': return `<span class="text-purple-700 font-bold">출고</span>`;
                 case 'DISCARD': return `<span class="text-rose-700 font-bold">폐기</span>`;
+                case 'ADJUST': return `<span class="text-teal-700 font-bold">실사조정</span>`;
                 default: return `<span class="text-slate-700 font-bold">${type}</span>`;
             }
         }
@@ -2229,6 +2375,8 @@
                 renderMasterTable();
             } else if (tabName === 'inventory') {
                 renderInventoryTable();
+            } else if (tabName === 'audit') {
+                renderStockAuditTable();
             } else if (tabName === 'ledger') {
                 renderStockLedger();
             } else if (tabName === 'calendar') {
@@ -4721,6 +4869,8 @@
             if (masterFilter) masterFilter.innerHTML = `<option value="">전체 분류</option>` + options;
             if (invFilter) invFilter.innerHTML = `<option value="">전체 품목분류</option>` + options;
             if (analyticsFilter) analyticsFilter.innerHTML = `<option value="">전체 품목분류</option>` + options;
+            const auditCatFilter = document.getElementById('audit-filter-category');
+            if (auditCatFilter) auditCatFilter.innerHTML = `<option value="">전체 품목분류</option>` + options;
             if (labelSearchCat) {
                 const curVal = labelSearchCat.value;
                 labelSearchCat.innerHTML = `<option value="">전체 구분</option>` + options;
@@ -4739,6 +4889,7 @@
             const invFilter = document.getElementById('inv-filter-location');
             const ledgerFilter = document.getElementById('ledger-location');
             const analyticsLocFilter = document.getElementById('analytics-filter-location');
+            const auditLocFilter = document.getElementById('audit-filter-location');
 
             const options = locationsDB.map(l => `<option value="${l}">${l}</option>`).join('');
 
@@ -4747,19 +4898,339 @@
             if (invFilter) invFilter.innerHTML = `<option value="">전체 보관 거점</option>` + options;
             if (ledgerFilter) ledgerFilter.innerHTML = `<option value="">전체 거점</option>` + options;
             if (analyticsLocFilter) analyticsLocFilter.innerHTML = `<option value="">전체 거점</option>` + options;
+            if (auditLocFilter) auditLocFilter.innerHTML = `<option value="">전체 거점</option>` + options;
 
             renderLocationManagerList();
         }
 
-        function openCategoryManagerModal() {
-            renderCategoryManagerList();
-            document.getElementById('category-modal')?.classList.remove('hidden');
-        }
-        function closeCategoryManagerModal() {
-            document.getElementById('category-modal')?.classList.add('hidden');
+        /* ==================== 재고실사 및 실재고량 조사 로직 ==================== */
+        function getAuditKey(code, location) {
+            return `${code}___${location}`;
         }
 
-        /* ==================== 작업자 관리 로직 ==================== */
+        function renderStockAuditTable() {
+            const tbody = document.getElementById('audit-table-tbody');
+            const tfoot = document.getElementById('audit-table-tfoot');
+            if (!tbody) return;
+
+            const locFilter = document.getElementById('audit-filter-location')?.value || '';
+            const catFilter = document.getElementById('audit-filter-category')?.value || '';
+            const statusFilter = document.getElementById('audit-filter-status')?.value || '';
+            const search = (document.getElementById('audit-search-input')?.value || '').trim().toLowerCase();
+
+            // 인쇄용 헤더 정보 동기화
+            const pDate = document.getElementById('print-audit-date');
+            const pWorker = document.getElementById('print-audit-worker');
+            const pLoc = document.getElementById('print-audit-location');
+            if (pDate) pDate.innerText = new Date().toISOString().split('T')[0];
+            if (pWorker) pWorker.innerText = currentGlobalWorker;
+            if (pLoc) pLoc.innerText = locFilter || '전체 거점';
+
+            let items = inventoryDB.filter(item => {
+                if (locFilter && item.location !== locFilter) return false;
+                if (catFilter && item.category !== catFilter) return false;
+                if (!search) return true;
+                return item.name.toLowerCase().includes(search) || 
+                       item.code.toLowerCase().includes(search) || 
+                       (item.supplier && item.supplier.toLowerCase().includes(search)) || 
+                       (item.spec && item.spec.toLowerCase().includes(search));
+            });
+
+            // 실사 상태 필터 (오차, 일치, 미입력)
+            if (statusFilter) {
+                items = items.filter(item => {
+                    const key = getAuditKey(item.code, item.location);
+                    const working = stockAuditWorkingMap[key];
+                    if (!working || working.actualQty === undefined || working.actualQty === null || working.actualQty === '') {
+                        return statusFilter === 'UNCOUNTED';
+                    }
+                    const diff = Number(working.actualQty) - item.quantity;
+                    if (statusFilter === 'DIFF') return diff !== 0;
+                    if (statusFilter === 'MATCH') return diff === 0;
+                    return true;
+                });
+            }
+
+            // KPI 집계
+            let matchedCount = 0;
+            let diffCount = 0;
+            let totalNetDiff = 0;
+            let totalBookStock = 0;
+            let totalActualStock = 0;
+
+            inventoryDB.forEach(item => {
+                const key = getAuditKey(item.code, item.location);
+                const working = stockAuditWorkingMap[key];
+                totalBookStock += item.quantity;
+
+                if (working && working.actualQty !== undefined && working.actualQty !== null && working.actualQty !== '') {
+                    const act = Number(working.actualQty);
+                    const diff = act - item.quantity;
+                    totalActualStock += act;
+                    if (diff === 0) matchedCount++;
+                    else {
+                        diffCount++;
+                        totalNetDiff += diff;
+                    }
+                } else {
+                    totalActualStock += item.quantity;
+                }
+            });
+
+            const kpiTotal = document.getElementById('audit-kpi-total-items');
+            const kpiMatched = document.getElementById('audit-kpi-matched-count');
+            const kpiDiff = document.getElementById('audit-kpi-diff-count');
+            const kpiNet = document.getElementById('audit-kpi-net-diff');
+            const navBadge = document.getElementById('nav-audit-diff-badge');
+
+            if (kpiTotal) kpiTotal.innerText = inventoryDB.length;
+            if (kpiMatched) kpiMatched.innerText = matchedCount;
+            if (kpiDiff) kpiDiff.innerText = diffCount;
+            if (kpiNet) {
+                kpiNet.innerText = (totalNetDiff >= 0 ? '+' : '') + totalNetDiff.toLocaleString();
+                kpiNet.className = `text-2xl font-black font-mono ${totalNetDiff === 0 ? 'text-slate-800' : totalNetDiff > 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+            }
+            if (navBadge) {
+                if (diffCount > 0) {
+                    navBadge.innerText = `${diffCount}건 오차`;
+                    navBadge.classList.remove('hidden');
+                } else {
+                    navBadge.classList.add('hidden');
+                }
+            }
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400">조건에 일치하는 실사 품목이 없습니다.</td></tr>`;
+                if (tfoot) tfoot.innerHTML = '';
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => {
+                const key = getAuditKey(item.code, item.location);
+                const working = stockAuditWorkingMap[key] || { actualQty: item.quantity, reason: "정기 실사 재고조사" };
+                const actQty = (working.actualQty !== undefined && working.actualQty !== null) ? working.actualQty : item.quantity;
+                const diff = Number(actQty) - item.quantity;
+
+                let diffBadge = '';
+                if (diff === 0) {
+                    diffBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">✅ 일치 (0)</span>`;
+                } else if (diff > 0) {
+                    diffBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 font-mono">+${diff} 초과</span>`;
+                } else {
+                    diffBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 font-mono">${diff} 부족</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-2.5 px-3">${getCategoryBadge(item.category)}</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-slate-800">${item.code}</td>
+                        <td class="py-2.5 px-3">
+                            <span class="font-bold text-slate-900 block">${item.name}</span>
+                            <span class="text-[11px] text-slate-400">${item.spec || '-'}</span>
+                        </td>
+                        <td class="py-2.5 px-3 font-semibold text-slate-700">${item.location}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800 bg-slate-50">${item.quantity} ${item.unit}</td>
+                        <td class="py-2.5 px-3 text-center bg-teal-50/40">
+                            <div class="inline-flex items-center gap-1">
+                                <input type="number" min="0" value="${actQty}" 
+                                    onchange="onAuditActualQtyChange('${item.code}', '${item.location}', this.value)" 
+                                    class="w-20 px-2 py-1 text-center font-mono font-bold text-xs border border-teal-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-2xs">
+                                <span class="text-slate-500 text-[11px] font-bold">${item.unit}</span>
+                            </div>
+                        </td>
+                        <td class="py-2.5 px-3 text-right">${diffBadge}</td>
+                        <td class="py-2.5 px-3">
+                            <input type="text" value="${working.reason || '정기 실사조정'}" 
+                                placeholder="오차 사유 입력..." 
+                                onchange="onAuditReasonChange('${item.code}', '${item.location}', this.value)" 
+                                class="w-full px-2 py-1 text-[11px] border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-teal-500">
+                        </td>
+                        <td class="py-2.5 px-3 text-center no-print">
+                            <button type="button" onclick="commitSingleAuditAdjustment('${item.code}', '${item.location}')" 
+                                class="px-2.5 py-1 ${diff === 0 ? 'bg-slate-100 text-slate-400 cursor-default' : 'bg-teal-600 hover:bg-teal-700 text-white shadow-xs'} rounded-lg text-xs font-bold transition">
+                                ${diff === 0 ? '정상' : '반영'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (tfoot) {
+                tfoot.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-2.5 px-3 text-center">조회 대상 합계 (총 ${items.length}개 품목)</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-900">${items.reduce((s, i) => s + i.quantity, 0)} EA</td>
+                        <td class="py-2.5 px-3 text-center font-mono text-teal-800">${items.reduce((s, i) => {
+                            const k = getAuditKey(i.code, i.location);
+                            return s + Number(stockAuditWorkingMap[k]?.actualQty ?? i.quantity);
+                        }, 0)} EA</td>
+                        <td colspan="3" class="py-2.5 px-3 text-slate-500 text-[11px]">단독 반영 또는 우측 상단 '오차 품목 전산 일괄 반영' 버튼을 누르면 전산 재고가 즉시 확정됩니다.</td>
+                    </tr>
+                `;
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function onAuditActualQtyChange(code, location, val) {
+            const key = getAuditKey(code, location);
+            const num = parseInt(val, 10);
+            if (!stockAuditWorkingMap[key]) {
+                stockAuditWorkingMap[key] = { reason: "정기 실사 재고조사" };
+            }
+            stockAuditWorkingMap[key].actualQty = isNaN(num) ? 0 : num;
+            renderStockAuditTable();
+        }
+
+        function onAuditReasonChange(code, location, val) {
+            const key = getAuditKey(code, location);
+            if (!stockAuditWorkingMap[key]) {
+                stockAuditWorkingMap[key] = { actualQty: 0 };
+            }
+            stockAuditWorkingMap[key].reason = val.trim() || "정기 실사조정";
+        }
+
+        function fillActualWithBookStock() {
+            inventoryDB.forEach(item => {
+                const key = getAuditKey(item.code, item.location);
+                stockAuditWorkingMap[key] = {
+                    actualQty: item.quantity,
+                    reason: "전산재고 일치 확인"
+                };
+            });
+            renderStockAuditTable();
+            showToast("모든 품목의 실재고 수량을 현재 전산재고와 동일하게 채웠습니다.", "info");
+        }
+
+        function commitSingleAuditAdjustment(code, location) {
+            const item = inventoryDB.find(i => i.code === code && i.location === location);
+            if (!item) return;
+
+            const key = getAuditKey(code, location);
+            const working = stockAuditWorkingMap[key];
+            const actualQty = working ? Number(working.actualQty) : item.quantity;
+            const diff = actualQty - item.quantity;
+
+            if (diff === 0) {
+                showToast(`[${item.name}] 전산재고와 실재고가 일치하여 조정이 필요하지 않습니다.`, "info");
+                return;
+            }
+
+            const now = new Date();
+            const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().substring(0, 5)}`;
+            const oldQty = item.quantity;
+            const reason = (working && working.reason) ? working.reason : "재고실사 수량 보정";
+
+            // 전산 재고 수량 갱신
+            item.quantity = actualQty;
+            item.lastUpdated = timestamp;
+
+            // 수불 감사 로그(Audit Trail) 기록
+            historyDB.unshift({
+                id: Date.now(),
+                timestamp: timestamp,
+                type: "ADJUST",
+                code: item.code,
+                name: item.name,
+                worker: currentGlobalWorker || "관리자",
+                qty: Math.abs(diff),
+                fromLoc: diff < 0 ? location : "-",
+                toLoc: diff > 0 ? location : "-",
+                reason: `[실사조정] ${diff > 0 ? '+' : ''}${diff} ${item.unit} (장부:${oldQty} ➔ 실사:${actualQty}) / 사유: ${reason}`
+            });
+
+            // 워킹 맵 초기화
+            delete stockAuditWorkingMap[key];
+
+            saveStateToStorage();
+            renderStockAuditTable();
+            renderInventoryTable();
+            renderMasterTable();
+            renderStockLedger();
+            renderHistoryTable();
+
+            showToast(`[${item.name}] 실재고 ${actualQty} ${item.unit}로 전산 조정 완료 (${diff > 0 ? '+' : ''}${diff})`, "success");
+        }
+
+        function commitAllAuditAdjustments() {
+            let adjustedCount = 0;
+            const now = new Date();
+            const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().substring(0, 5)}`;
+
+            inventoryDB.forEach(item => {
+                const key = getAuditKey(item.code, item.location);
+                const working = stockAuditWorkingMap[key];
+                if (!working || working.actualQty === undefined || working.actualQty === null) return;
+
+                const actualQty = Number(working.actualQty);
+                const diff = actualQty - item.quantity;
+
+                if (diff !== 0) {
+                    const oldQty = item.quantity;
+                    const reason = working.reason || "정기 재고조사 일괄반영";
+
+                    item.quantity = actualQty;
+                    item.lastUpdated = timestamp;
+
+                    historyDB.unshift({
+                        id: Date.now() + Math.random(),
+                        timestamp: timestamp,
+                        type: "ADJUST",
+                        code: item.code,
+                        name: item.name,
+                        worker: currentGlobalWorker || "관리자",
+                        qty: Math.abs(diff),
+                        fromLoc: diff < 0 ? item.location : "-",
+                        toLoc: diff > 0 ? item.location : "-",
+                        reason: `[일괄실사] ${diff > 0 ? '+' : ''}${diff} ${item.unit} (장부:${oldQty} ➔ 실사:${actualQty}) / ${reason}`
+                    });
+
+                    adjustedCount++;
+                }
+            });
+
+            if (adjustedCount === 0) {
+                showToast("조정할 오차(차이) 내역이 없습니다.", "info");
+                return;
+            }
+
+            stockAuditWorkingMap = {};
+            saveStateToStorage();
+            renderStockAuditTable();
+            renderInventoryTable();
+            renderMasterTable();
+            renderStockLedger();
+            renderHistoryTable();
+
+            showToast(`총 ${adjustedCount}건의 실사 오차 품목이 전산재고에 성공적으로 일괄 반영되었습니다!`, "success");
+        }
+
+        function exportAuditReportToCSV() {
+            let csv = "\uFEFF품목구분,품목코드,품목명,규격,거점,전산재고,실제조사재고,실사차이,단위,조정사유,실사일자,담당자\n";
+            const today = new Date().toISOString().split('T')[0];
+
+            inventoryDB.forEach(item => {
+                const key = getAuditKey(item.code, item.location);
+                const working = stockAuditWorkingMap[key];
+                const actQty = working ? Number(working.actualQty) : item.quantity;
+                const diff = actQty - item.quantity;
+                const reason = working ? working.reason : "정상 일치";
+
+                csv += `"${item.category}","${item.code}","${item.name}","${item.spec || ''}","${item.location}",${item.quantity},${actQty},${diff},"${item.unit}","${reason}","${today}","${currentGlobalWorker}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `WMS_현장재고실사조사표_${today}.csv`;
+            link.click();
+            showToast("재고실사 조사표 CSV 다운로드가 완료되었습니다.", "success");
+        }
+
+        function printStockAuditSheet() {
+            window.print();
+        }
+
         function openWorkerManagerModal() {
             renderWorkerManagerList();
             document.getElementById('worker-modal')?.classList.remove('hidden');
@@ -4772,102 +5243,94 @@
 
         function registerNewWorker() {
             const name = document.getElementById('new-worker-name')?.value.trim();
-            const code = document.getElementById('new-worker-code')?.value.trim() || `EMP-00${workersDB.length + 1}`;
-            const dept = document.getElementById('new-worker-dept')?.value.trim() || '현장운영팀';
-            const role = document.getElementById('new-worker-role')?.value.trim() || '담당자';
+            const id = document.getElementById('new-worker-code')?.value.trim() || `EMP-${String(workersDB.length + 1).padStart(3, '0')}`;
+            const dept = document.getElementById('new-worker-dept')?.value.trim() || '현장관리팀';
+            const role = document.getElementById('new-worker-role')?.value.trim() || '작업자';
 
             if (!name) {
-                showToast("작업자 이름은 필수입니다.", "warning");
+                showToast("작업자 이름을 입력하세요.", "warning");
                 return;
             }
 
-            const formattedName = `${name} (${role})`;
-            if (workersDB.some(w => w.name === name && w.dept === dept)) {
-                showToast("이미 등록된 작업자입니다.", "warning");
+            if (workersDB.some(w => w.name === name)) {
+                showToast("이미 동일한 이름의 작업자가 존재합니다.", "warning");
                 return;
             }
 
-            workersDB.push({ id: code, name, dept, role });
-            currentGlobalWorker = formattedName;
+            workersDB.push({ id, name, dept, role });
+            saveStateToStorage();
+            populateWorkerSelects();
+            renderWorkerManagerList();
 
-            // 입력창 비우기
             document.getElementById('new-worker-name').value = '';
             document.getElementById('new-worker-code').value = '';
             document.getElementById('new-worker-dept').value = '';
             document.getElementById('new-worker-role').value = '';
 
-            saveStateToStorage();
-            populateWorkerSelects();
-            renderWorkerManagerList();
-            showToast(`새 작업자 [${formattedName}] 등록이 완료되었습니다.`, 'success');
+            changeGlobalWorker(name);
+            showToast(`신규 작업자 [${name}] 등록이 완료되었습니다.`, "success");
         }
 
-        function selectActiveWorker(workerDisplay) {
-            currentGlobalWorker = workerDisplay;
-            localStorage.setItem('wms_global_worker', currentGlobalWorker);
-            populateWorkerSelects();
-            renderWorkerManagerList();
-            const slipWorker = document.getElementById('slip-worker-name');
-            if (slipWorker) slipWorker.innerText = currentGlobalWorker;
-            showToast(`현재 작업자가 [${currentGlobalWorker}]님으로 변경되었습니다.`, 'info');
-        }
-
-        function removeWorker(id) {
+        function deleteWorker(workerId) {
             if (workersDB.length <= 1) {
                 showToast("최소 1명 이상의 작업자가 필요합니다.", "warning");
                 return;
             }
-            const target = workersDB.find(w => w.id === id);
-            workersDB = workersDB.filter(w => w.id !== id);
+            const target = workersDB.find(w => w.id === workerId);
+            workersDB = workersDB.filter(w => w.id !== workerId);
             saveStateToStorage();
             populateWorkerSelects();
             renderWorkerManagerList();
-            showToast(`작업자 [${target ? target.name : id}] 정보가 삭제되었습니다.`, 'info');
+
+            if (target && currentGlobalWorker.includes(target.name)) {
+                changeGlobalWorker(workersDB[0].name);
+            }
+            showToast(`작업자가 삭제되었습니다.`, "info");
+        }
+
+        function selectWorkerAsGlobal(name) {
+            changeGlobalWorker(name);
+            const gwSelect = document.getElementById('global-worker-select');
+            if (gwSelect) gwSelect.value = name;
+            closeWorkerManagerModal();
         }
 
         function renderWorkerManagerList() {
             const container = document.getElementById('worker-list-container');
-            const countBadge = document.getElementById('worker-total-count');
+            const totalCountEl = document.getElementById('worker-total-count');
+            if (totalCountEl) totalCountEl.innerText = workersDB.length;
             if (!container) return;
 
-            if (countBadge) countBadge.innerText = workersDB.length;
-
-            if (workersDB.length === 0) {
-                container.innerHTML = `<div class="p-3 text-center text-slate-400 text-xs">등록된 작업자가 없습니다.</div>`;
-                return;
-            }
-
             container.innerHTML = workersDB.map(w => {
-                const displayName = `${w.name} (${w.role || '담당'})`;
-                const isCurrent = currentGlobalWorker.startsWith(w.name);
-
+                const isActive = currentGlobalWorker.includes(w.name);
                 return `
-                    <div class="p-2.5 rounded-xl border flex items-center justify-between transition ${isCurrent ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 border-slate-200'}">
+                    <div class="p-2.5 ${isActive ? 'bg-blue-50/80 border-blue-300 ring-1 ring-blue-400' : 'bg-slate-50 border-slate-200'} border rounded-xl flex items-center justify-between transition">
                         <div class="flex items-center gap-2">
-                            <div class="w-7 h-7 rounded-lg ${isCurrent ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-bold text-xs">
-                                ${w.name.charAt(0)}
+                            <div class="w-7 h-7 rounded-lg ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-bold text-xs">
+                                ${w.name.substring(0, 1)}
                             </div>
                             <div>
                                 <div class="flex items-center gap-1.5">
                                     <span class="font-bold text-slate-900">${w.name}</span>
-                                    <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${isCurrent ? 'bg-blue-200 text-blue-900' : 'bg-slate-200 text-slate-700'}">${w.role || '담당'}</span>
-                                    ${isCurrent ? `<span class="text-[9px] font-bold text-blue-600 bg-white border border-blue-200 px-1 rounded">현재선택</span>` : ''}
+                                    <span class="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-slate-200 text-slate-700">${w.role || '담당자'}</span>
+                                    ${isActive ? '<span class="text-[9px] px-1.5 py-0.2 rounded font-bold bg-blue-600 text-white">현재작업자</span>' : ''}
                                 </div>
-                                <div class="text-[10px] text-slate-500 font-mono">${w.id} | ${w.dept || '팀 미지정'}</div>
+                                <div class="text-[10px] text-slate-500 font-mono">${w.id} | ${w.dept}</div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <button type="button" onclick="selectActiveWorker('${displayName}')" class="px-2 py-1 ${isCurrent ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-blue-50'} rounded-lg font-bold text-[11px] transition">
-                                ${isCurrent ? '선택됨' : '선택'}
-                            </button>
-                            <button type="button" onclick="removeWorker('${w.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded transition" title="작업자 삭제">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <div class="flex items-center gap-1">
+                            ${!isActive ? `
+                                <button type="button" onclick="selectWorkerAsGlobal('${w.name}')" class="px-2 py-1 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[11px] font-bold transition">
+                                    선택
+                                </button>
+                            ` : ''}
+                            <button type="button" onclick="deleteWorker('${w.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded transition" title="삭제">
+                                <i data-lucide="trash" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
                     </div>
                 `;
             }).join('');
-
             if (window.lucide) lucide.createIcons();
         }
 
@@ -4875,26 +5338,39 @@
             const globalSelect = document.getElementById('global-worker-select');
             const actionSelect = document.getElementById('action-select-worker');
 
-            const options = workersDB.map(w => {
-                const label = `${w.name} (${w.role || '담당'})`;
-                return `<option value="${label}">${label} [${w.dept || '팀'}]</option>`;
-            }).join('');
+            const options = workersDB.map(w => `<option value="${w.name}">${w.name} (${w.dept || w.role})</option>`).join('');
 
             if (globalSelect) {
                 globalSelect.innerHTML = options;
-                if (!workersDB.some(w => currentGlobalWorker.startsWith(w.name))) {
-                    if (workersDB.length > 0) {
-                        currentGlobalWorker = `${workersDB[0].name} (${workersDB[0].role || '담당'})`;
-                    }
-                }
-                globalSelect.value = currentGlobalWorker;
+                const match = workersDB.find(w => currentGlobalWorker.includes(w.name));
+                if (match) globalSelect.value = match.name;
+                else if (workersDB.length > 0) globalSelect.value = workersDB[0].name;
             }
 
             if (actionSelect) {
                 actionSelect.innerHTML = options;
-                actionSelect.value = currentGlobalWorker;
+                const match = workersDB.find(w => currentGlobalWorker.includes(w.name));
+                if (match) actionSelect.value = match.name;
+                else if (workersDB.length > 0) actionSelect.value = workersDB[0].name;
             }
         }
+
+        function handleActionWorkerSelect(val) {
+            if (val) {
+                changeGlobalWorker(val);
+            }
+        }
+
+        function openCategoryManagerModal() {
+            renderCategoryManagerList();
+            document.getElementById('category-modal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeCategoryManagerModal() {
+            document.getElementById('category-modal')?.classList.add('hidden');
+        }
+
         function addCategory() {
             const val = document.getElementById('new-category-input')?.value.trim();
             if (!val) return;
@@ -4903,12 +5379,12 @@
                 return;
             }
             categoriesDB.push(val);
-            const input = document.getElementById('new-category-input');
-            if(input) input.value = "";
+            document.getElementById('new-category-input').value = "";
             saveStateToStorage();
             populateCategorySelects();
             showToast(`분류 [${val}] 추가 완료`, "success");
         }
+
         function removeCategory(cat) {
             if (categoriesDB.length <= 1) {
                 showToast("최소 1개 이상의 분류가 필요합니다.", "warning");
@@ -4919,6 +5395,7 @@
             populateCategorySelects();
             showToast(`분류 [${cat}] 삭제 완료`, "info");
         }
+
         function renderCategoryManagerList() {
             const container = document.getElementById('category-list-container');
             if (!container) return;
@@ -4936,10 +5413,13 @@
         function openLocationManagerModal() {
             renderLocationManagerList();
             document.getElementById('location-modal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
         }
+
         function closeLocationManagerModal() {
             document.getElementById('location-modal')?.classList.add('hidden');
         }
+
         function addLocation() {
             const val = document.getElementById('new-location-input')?.value.trim();
             if (!val) return;
@@ -4948,12 +5428,12 @@
                 return;
             }
             locationsDB.push(val);
-            const input = document.getElementById('new-location-input');
-            if(input) input.value = "";
+            document.getElementById('new-location-input').value = "";
             saveStateToStorage();
             populateLocationSelects();
             showToast(`거점 [${val}] 추가 완료`, "success");
         }
+
         function removeLocation(loc) {
             if (locationsDB.length <= 1) {
                 showToast("최소 1개 이상의 거점이 필요합니다.", "warning");
@@ -4964,6 +5444,7 @@
             populateLocationSelects();
             showToast(`거점 [${loc}] 삭제 완료`, "info");
         }
+
         function renderLocationManagerList() {
             const container = document.getElementById('location-list-container');
             if (!container) return;
@@ -4980,18 +5461,23 @@
 
         function openBulkImportModal() {
             document.getElementById('bulk-import-modal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
         }
+
         function closeBulkImportModal() {
             document.getElementById('bulk-import-modal')?.classList.add('hidden');
         }
+
         function handleDragOver(e) {
             e.preventDefault();
         }
+
         function handleFileDrop(e) {
             e.preventDefault();
             const file = e.dataTransfer.files[0];
             if (file) parseSpreadsheetFile(file);
         }
+
         function handleExcelFileUpload(e) {
             const file = e.target.files[0];
             if (file) parseSpreadsheetFile(file);
@@ -5075,15 +5561,12 @@
             parsedBulkStagingList = staging;
 
             document.getElementById('detected-columns-bar')?.classList.remove('hidden');
-            const newBadge = document.getElementById('bulk-new-badge');
-            if(newBadge) newBadge.innerText = `신규: ${newCount}건`;
-            const updateBadge = document.getElementById('bulk-update-badge');
-            if(updateBadge) updateBadge.innerText = `갱신: ${updateCount}건`;
-            const previewCount = document.getElementById('bulk-preview-count');
-            if(previewCount) previewCount.innerText = staging.length;
+            document.getElementById('bulk-new-badge').innerText = `신규: ${newCount}건`;
+            document.getElementById('bulk-update-badge').innerText = `갱신: ${updateCount}건`;
+            document.getElementById('bulk-preview-count').innerText = staging.length;
 
             const tbody = document.getElementById('bulk-preview-tbody');
-            if(tbody) {
+            if (tbody) {
                 tbody.innerHTML = staging.map(item => `
                     <tr class="hover:bg-slate-50">
                         <td class="py-1.5 px-2 font-bold ${item.isExisting ? 'text-blue-600' : 'text-emerald-600'}">${item.isExisting ? '갱신' : '신규'}</td>
@@ -5100,7 +5583,7 @@
 
             document.getElementById('bulk-preview-container')?.classList.remove('hidden');
             const btnCommit = document.getElementById('btn-commit-bulk');
-            if(btnCommit) btnCommit.disabled = staging.length === 0;
+            if (btnCommit) btnCommit.disabled = staging.length === 0;
         }
 
         function commitBulkImport() {
@@ -5358,6 +5841,7 @@
             renderStockLedger();
             renderWmsCalendar();
             renderHistoryTable();
+            renderStockAuditTable();
             updatePreviewLabel();
 
             if (inventoryDB.length > 0) {
