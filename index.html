@@ -14,6 +14,8 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <!-- SheetJS Excel Library -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Font: Inter & Noto Sans KR -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,11 +66,15 @@
             </div>
 
             <!-- 상단 툴바 액션 버튼 그룹 -->
-            <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
-                <button type="button" onclick="openMobileAccessModal()" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-                    <span>모바일 접속 QR</span>
-                </button>
+        <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
+            <button type="button" onclick="openWidgetManagerModal()" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+                <span>홈 작업창 설정</span>
+            </button>
+            <button type="button" onclick="openMobileAccessModal()" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                <span>모바일 접속 QR</span>
+            </button>
                 <button type="button" onclick="openBulkImportModal()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-emerald-600/20">
                     <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
                     <span>엑셀/시트 등록</span>
@@ -94,7 +100,11 @@
 
         <!-- 탭 메뉴 네비게이션 -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 flex overflow-x-auto gap-2 sm:gap-6 border-t border-slate-100 scrollbar-none text-xs sm:text-sm">
-            <button type="button" onclick="switchTab('scan')" id="tab-btn-scan" class="tab-btn active py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
+            <button type="button" onclick="switchTab('home')" id="tab-btn-home" class="tab-btn active py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
+                <i data-lucide="home" class="w-4 h-4"></i>
+                <span>홈 (대시보드)</span>
+            </button>
+            <button type="button" onclick="switchTab('scan')" id="tab-btn-scan" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
                 <i data-lucide="scan-line" class="w-4 h-4"></i>
                 <span>현장 스캔 / 작업</span>
             </button>
@@ -121,6 +131,13 @@
                     <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-indigo-100 text-indigo-700 rounded-full">구글 연동</span>
                 </span>
             </button>
+            <button type="button" onclick="switchTab('analytics')" id="tab-btn-analytics" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>
+                <span class="flex items-center gap-1">
+                    <span class="font-bold text-emerald-700">월간 실적 현황판</span>
+                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-emerald-100 text-emerald-800 rounded-full">그래프</span>
+                </span>
+            </button>
             <button type="button" onclick="switchTab('history')" id="tab-btn-history" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
                 <i data-lucide="history" class="w-4 h-4"></i>
                 <span>작업 이력 (Audit Log)</span>
@@ -129,173 +146,303 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-1">
-        <!-- ==================== TAB 1: 현장 스캔 및 작업 ==================== -->
-        <section id="tab-content-scan" class="tab-section block space-y-6">
-            <div id="deep-link-banner" class="hidden p-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-md flex items-center justify-between">
-                <div class="flex items-center gap-2 text-xs font-semibold">
-                    <i data-lucide="zap" class="w-4 h-4 text-amber-300"></i>
-                    <span>스마트폰 카메라 원스캔 딥링크를 통해 품목이 즉시 연결되었습니다!</span>
+        <!-- ==================== TAB 0: 홈 (맞춤형 작업창 대시보드) ==================== -->
+        <section id="tab-content-home" class="tab-section block space-y-6">
+            <!-- 홈 최상단 KPI 요약 헤더 카드 -->
+            <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-lg border border-slate-800">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">실시간 WMS 허브</span>
+                            <span id="home-current-time" class="text-xs text-slate-400 font-mono">2026-09-20</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black tracking-tight">작업 현황 및 통합 관리 홈</h2>
+                        <p class="text-xs text-slate-400">자주 사용하는 작업창 카드를 홈 화면에 추가하거나 제외하여 나만의 작업 환경을 구성하세요.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="openWidgetManagerModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-md shadow-indigo-600/30">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                            <span>작업창 넣기 / 빼기 설정</span>
+                        </button>
+                    </div>
                 </div>
-                <button type="button" onclick="closeDeepLinkBanner()" class="text-white/80 hover:text-white">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
+
+                <!-- 핵심 요약 지표 (KPI) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 hover:bg-white/10 transition cursor-pointer" onclick="switchTab('master')">
+                        <span class="text-slate-400 text-[11px] font-bold block">등록 품목 마스터</span>
+                        <div class="flex items-baseline gap-1.5 mt-1">
+                            <span id="home-kpi-master-count" class="text-2xl font-black text-white">0</span>
+                            <span class="text-xs text-slate-400">품목</span>
+                        </div>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 hover:bg-white/10 transition cursor-pointer" onclick="switchTab('inventory')">
+                        <span class="text-slate-400 text-[11px] font-bold block">창고 보관 총수량</span>
+                        <div class="flex items-baseline gap-1.5 mt-1">
+                            <span id="home-kpi-total-stock" class="text-2xl font-black text-blue-400">0</span>
+                            <span class="text-xs text-slate-400">EA</span>
+                        </div>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 hover:bg-white/10 transition cursor-pointer" onclick="switchTab('inventory')">
+                        <span class="text-slate-400 text-[11px] font-bold block">안전재고 부족 경보</span>
+                        <div class="flex items-baseline gap-1.5 mt-1">
+                            <span id="home-kpi-low-stock" class="text-2xl font-black text-rose-400">0</span>
+                            <span class="text-xs text-rose-300 font-bold">건 결품 위험</span>
+                        </div>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 hover:bg-white/10 transition cursor-pointer" onclick="switchTab('calendar')">
+                        <span class="text-slate-400 text-[11px] font-bold block">오늘 수불 & 예정 일정</span>
+                        <div class="flex items-baseline gap-1.5 mt-1">
+                            <span id="home-kpi-today-events" class="text-2xl font-black text-emerald-400">0</span>
+                            <span class="text-xs text-slate-400">건 처리</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- 좌측: 검색 및 카메라 스캐너 영역 -->
-                <div class="lg:col-span-5 space-y-4">
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                            <span class="flex items-center gap-1.5">
-                                <i data-lucide="search" class="w-3.5 h-3.5 text-blue-600"></i>
-                                <span>바코드 건 스캔 / 품목명·코드 직접 검색</span>
-                            </span>
-                            <span class="text-[11px] text-blue-600 font-normal">품목명 일부 입력 시 자동완성</span>
-                        </label>
-                        <div class="relative">
-                            <input type="text" id="manual-scan-input" placeholder="품목코드(ITEM-1001) 또는 품목명(볼트, 모터 등) 입력..." 
-                                oninput="handleSearchSuggestions(this.value)" 
-                                onkeydown="if(event.key==='Enter') handleManualScan()" 
-                                onfocus="handleSearchSuggestions(this.value)"
-                                class="w-full pl-9 pr-20 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                            <i data-lucide="barcode" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
-                            <div class="absolute right-1.5 top-1.5 flex items-center gap-1">
-                                <button type="button" onclick="clearSearchInput()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
-                                    <i data-lucide="x-circle" class="w-4 h-4"></i>
-                                </button>
-                                <button type="button" onclick="handleManualScan()" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm">
-                                    조회
-                                </button>
+            <!-- 홈 화면 작업창 위젯 그리드 컨테이너 -->
+            <div id="home-widgets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+                <!-- 위젯 1: 빠른 품목 스캔 & 즉시 작업창 (5 cols) -->
+                <div id="widget-scan-action" class="home-widget lg:col-span-6 xl:col-span-5 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <i data-lucide="scan-line" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">현장 스캔 & 빠른 수불창</h3>
+                                <p class="text-[10px] text-slate-500">코드 직접 검색 또는 실시간 입출고 처리</p>
                             </div>
                         </div>
-                        <div id="search-suggestions-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-72 overflow-y-auto divide-y divide-slate-100"></div>
-                    </div>
-
-                    <!-- 실시간 카메라 뷰파인더 카드 -->
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="camera" class="w-4 h-4 text-blue-600"></i>
-                                <span class="text-xs font-bold text-slate-800">카메라 실시간 QR 스캐너</span>
-                            </div>
-                            <select id="camera-select" onchange="onCameraDeviceChange()" class="text-[11px] py-1 px-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 focus:outline-none">
-                                <option value="">후면 카메라 (자동)</option>
-                            </select>
-                        </div>
-
-                        <div class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[220px] flex flex-col items-center justify-center text-slate-400">
-                            <div id="qr-reader-view" class="w-full h-full min-h-[220px] flex items-center justify-center"></div>
-                            <div id="camera-idle-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 p-4 text-center">
-                                <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
-                                    <i data-lucide="video-off" class="w-6 h-6"></i>
-                                </div>
-                                <p class="text-xs font-semibold text-slate-300">카메라가 대기 중입니다</p>
-                                <p class="text-[11px] text-slate-500 mt-1">실시간 스캔을 시작하려면 아래 '카메라 켜기'를 누르세요</p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" id="btn-toggle-camera" onclick="toggleCamera()" class="py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
-                                <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                                <span id="camera-btn-text">카메라 켜기</span>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="switchTab('scan')" class="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
+                                <span>상세화면</span>
+                                <i data-lucide="arrow-right" class="w-3 h-3"></i>
                             </button>
-                            <label class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-sm">
-                                <i data-lucide="aperture" class="w-3.5 h-3.5 text-blue-600"></i>
-                                <span>📷 사진으로 촬영</span>
-                                <input type="file" accept="image/*" capture="environment" onchange="handleFileQrScan(event)" class="hidden">
-                            </label>
+                            <button type="button" onclick="removeWidget('widget-scan-action')" class="p-1 text-slate-400 hover:text-rose-500 rounded" title="홈에서 빼기">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
                         </div>
-
-                        <div class="pt-2 border-t border-slate-100">
-                            <div class="text-[11px] font-bold text-slate-500 mb-2">원클릭 테스트 샘플:</div>
-                            <div id="quick-samples-list" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex gap-1.5">
+                            <input type="text" id="home-quick-scan-input" placeholder="품목코드(ITEM-1001) 또는 품목명..." 
+                                onkeydown="if(event.key==='Enter') executeHomeScan()" 
+                                class="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="button" onclick="executeHomeScan()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                                조회
+                            </button>
+                        </div>
+                        <div id="home-quick-item-card" class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <span id="hq-item-badge" class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-800">부자재</span>
+                                    <span id="hq-item-name" class="font-bold text-slate-900 text-xs">스테인리스 육각볼트</span>
+                                </div>
+                                <span id="hq-item-qty" class="text-sm font-black text-blue-700">180 EA</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] text-slate-500">
+                                <span>코드: <strong id="hq-item-code" class="font-mono text-slate-700">ITEM-1001</strong></span>
+                                <span>위치: <strong id="hq-item-loc" class="text-slate-700">김포공장 A동</strong></span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1.5 pt-1">
+                                <button type="button" onclick="openActionModal('IN')" class="py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition">입고</button>
+                                <button type="button" onclick="openActionModal('USE')" class="py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition">사용</button>
+                                <button type="button" onclick="openActionModal('MOVE')" class="py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition">이동</button>
+                                <button type="button" onclick="openActionModal('OUT')" class="py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700 transition">출고</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 우측: 품목 상세 정보 및 작업 패널 -->
-                <div class="lg:col-span-7 space-y-4">
-                    <div id="scanned-detail-card" class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                        <div class="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100">
+                <!-- 위젯 2: 안전재고 부족 알림창 (7 cols) -->
+                <div id="widget-low-safety" class="home-widget lg:col-span-6 xl:col-span-7 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            </div>
                             <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span id="detail-category-badge" class="px-2 py-0.5 text-xs font-bold rounded-md bg-blue-100 text-blue-800">완제품</span>
-                                    <span id="detail-code" class="text-xs font-mono font-bold text-slate-400">ITEM-XXXX</span>
-                                </div>
-                                <h3 id="detail-name" class="text-xl sm:text-2xl font-black text-slate-900">물품을 스캔하거나 선택해주세요</h3>
-                                <p id="detail-spec" class="text-xs text-slate-500 mt-0.5">규격 및 사양 정보</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-[11px] font-bold text-slate-400 block">현재고량</span>
-                                <div class="flex items-baseline justify-end gap-1">
-                                    <span id="detail-qty" class="text-2xl sm:text-3xl font-black text-blue-600">0</span>
-                                    <span id="detail-unit" class="text-xs font-bold text-slate-500">EA</span>
-                                </div>
-                                <span id="detail-safety-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600">안전재고: -</span>
+                                <h3 class="font-bold text-sm text-slate-900">안전재고 부족 경보창</h3>
+                                <p class="text-[10px] text-slate-500">설정된 안전재고 기준치보다 보유량이 적은 품목</p>
                             </div>
                         </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="switchTab('inventory')" class="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
+                                <span>재고현황</span>
+                                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                            <button type="button" onclick="removeWidget('widget-low-safety')" class="p-1 text-slate-400 hover:text-rose-500 rounded" title="홈에서 빼기">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="home-low-stock-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span class="text-slate-400 block text-[10px] font-bold">제조원 / 거래처</span>
-                                <span id="detail-supplier" class="font-bold text-slate-800 truncate block mt-0.5">-</span>
+                <!-- 위젯 3: 당일 입출고 & 구글 캘린더 요약창 (6 cols) -->
+                <div id="widget-today-calendar" class="home-widget lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                <i data-lucide="calendar" class="w-4 h-4"></i>
                             </div>
-                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span class="text-slate-400 block text-[10px] font-bold">현재 보관 거점</span>
-                                <span id="detail-location" class="font-bold text-blue-700 truncate block mt-0.5">-</span>
-                            </div>
-                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span class="text-slate-400 block text-[10px] font-bold">최종 작업일시</span>
-                                <span id="detail-last-updated" class="font-medium text-slate-700 block mt-0.5">-</span>
-                            </div>
-                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span class="text-slate-400 block text-[10px] font-bold">현재 상태</span>
-                                <span id="detail-status" class="font-bold text-emerald-600 block mt-0.5">정상 보관</span>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">오늘의 입출고 일정 & 캘린더</h3>
+                                <p class="text-[10px] text-slate-500">당일 처리 작업 및 등록된 예약 일정</p>
                             </div>
                         </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="switchTab('calendar')" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5">
+                                <span>캘린더 탭</span>
+                                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                            <button type="button" onclick="removeWidget('widget-today-calendar')" class="p-1 text-slate-400 hover:text-rose-500 rounded" title="홈에서 빼기">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="home-today-calendar-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
 
-                        <div>
-                            <span class="text-xs font-bold text-slate-700 block mb-2">작업 선택 및 처리:</span>
-                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                                <button type="button" onclick="openActionModal('IN')" class="py-3 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-sm shadow-emerald-600/20">
-                                    <i data-lucide="log-in" class="w-4 h-4"></i>
-                                    <span>📥 입고</span>
-                                </button>
-                                <button type="button" onclick="openActionModal('USE')" class="py-3 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-sm shadow-blue-600/20">
-                                    <i data-lucide="hammer" class="w-4 h-4"></i>
-                                    <span>🛠️ 사용</span>
-                                </button>
-                                <button type="button" onclick="openActionModal('MOVE')" class="py-3 px-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-sm shadow-amber-500/20">
-                                    <i data-lucide="arrow-right-left" class="w-4 h-4"></i>
-                                    <span>🔄 이동</span>
-                                </button>
-                                <button type="button" onclick="openActionModal('OUT')" class="py-3 px-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-sm shadow-purple-600/20">
-                                    <i data-lucide="truck" class="w-4 h-4"></i>
-                                    <span>📦 출고</span>
-                                </button>
-                                <button type="button" onclick="openActionModal('DISCARD')" class="col-span-2 sm:col-span-1 py-3 px-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-sm shadow-rose-600/20">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    <span>🗑️ 폐기</span>
-                                </button>
+                <!-- 위젯 4: 실시간 최근 작업 로그 (Audit Log) (6 cols) -->
+                <div id="widget-recent-history" class="home-widget lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+                                <i data-lucide="history" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">최근 실시간 작업 로그</h3>
+                                <p class="text-[10px] text-slate-500">최근 발생한 입고·사용·이동·출고 이력</p>
                             </div>
                         </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="switchTab('history')" class="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
+                                <span>전체 이력</span>
+                                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                            <button type="button" onclick="removeWidget('widget-recent-history')" class="p-1 text-slate-400 hover:text-rose-500 rounded" title="홈에서 빼기">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="home-recent-history-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
 
-                        <div class="pt-4 border-t border-slate-100">
-                            <span class="text-xs font-bold text-slate-700 block mb-2">해당 품목 최근 작업 로그 (최근 5건)</span>
-                            <div class="overflow-x-auto rounded-xl border border-slate-200">
-                                <table class="w-full text-left text-xs">
-                                    <thead class="bg-slate-50 text-slate-500 border-b border-slate-200">
-                                        <tr>
-                                            <th class="py-2 px-3 font-semibold">일시</th>
-                                            <th class="py-2 px-3 font-semibold">작업</th>
-                                            <th class="py-2 px-3 font-semibold">변동량</th>
-                                            <th class="py-2 px-3 font-semibold">거점/사유</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="detail-history-tbody" class="divide-y divide-slate-100 text-slate-700">
-                                        <tr><td colspan="4" class="py-3 text-center text-slate-400">작업 이력이 없습니다.</td></tr>
-                                    </tbody>
-                                </table>
+                <!-- 위젯 5: 빠른 원부자재 이동전표 작성창 (6 cols) -->
+                <div id="widget-quick-transfer" class="home-widget lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">원부자재 이동전표 빠른창</h3>
+                                <p class="text-[10px] text-slate-500">거점 간 자재 이동 전표 작성 및 A4 서식 출력</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="openTransferSlipModal()" class="text-[11px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-0.5">
+                                <span>전표 열기</span>
+                                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                            <button type="button" onclick="removeWidget('widget-quick-transfer')" class="p-1 text-slate-400 hover:text-rose-500 rounded" title="홈에서 빼기">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-amber-50/50 border border-amber-200 rounded-xl space-y-2 text-xs">
+                        <div class="flex items-center justify-between text-amber-950 font-bold">
+                            <span>최근 이동 이력 기반 전표 간편 발행</span>
+                            <span id="home-slip-count-badge" class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded text-[10px]">최근 0건</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600">공장 및 창고 간 원부자재 불출·입고 시 정식 인수인계 서식을 즉시 작성하고 인쇄할 수 있습니다.</p>
+                        <button type="button" onclick="openTransferSlipModal()" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition shadow-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                            <span>새 이동전표 작성 및 출력</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 위젯 6: 간편 QR 라벨 발행 바로가기창 (6 cols) -->
+                <div id="widget-quick-label" class="home-widget lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">물류 라벨 QR 즉시 발행창</h3>
+                                <p class="text-[10px] text-slate-500">70x50mm 스티커 라벨 인쇄 및 스마트폰 딥링크 생성</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="switchTab('label')" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-0.5">
+                                <span>라벨발행 탭</span>
+                                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                            <button type="button" onclick="removeWidget('widget-quick-label')" class="p-1 text-slate-400 hover:text-rose-500 rounded" title="홈에서 빼기">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-2 text-xs">
+                        <div class="flex items-center justify-between text-emerald-950 font-bold">
+                            <span>스마트폰 원스캔 라벨</span>
+                            <span class="px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded text-[10px]">70x50mm</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600">신규 자재 입고 시 스마트폰 카메라로 비추면 상세 정보로 직행하는 QR 라벨을 즉시 출력합니다.</p>
+                        <button type="button" onclick="switchTab('label')" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition shadow-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                            <span>라벨 생성기 바로가기</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 위젯 7: 월간 실적 요약 미니 그래프창 (12 cols) -->
+                <div id="widget-monthly-summary" class="home-widget lg:col-span-12 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">당월 입출고 실적 및 추이 요약</h3>
+                                <p class="text-[10px] text-slate-500" id="home-widget-month-subtitle">2026년 9월 실시간 물동량 현황</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="switchTab('analytics')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1 transition">
+                                <span>상세 현황판 분석</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" onclick="removeWidget('widget-monthly-summary')" class="p-1 text-slate-400 hover:text-rose-500 rounded" title="홈에서 빼기">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                        <div class="md:col-span-8 h-48 sm:h-56 relative">
+                            <canvas id="home-chart-monthly-trend"></canvas>
+                        </div>
+                        <div class="md:col-span-4 space-y-2 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                            <span class="text-[11px] font-bold text-slate-500 block">당월 누적 실적 브리핑</span>
+                            <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                                <span class="text-slate-600">총 입고량</span>
+                                <span id="home-widget-in-qty" class="font-bold text-emerald-700 font-mono">0 EA</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                                <span class="text-slate-600">총 사용·출고량</span>
+                                <span id="home-widget-out-qty" class="font-bold text-blue-700 font-mono">0 EA</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                                <span class="text-slate-600">거점 간 이동량</span>
+                                <span id="home-widget-move-qty" class="font-bold text-amber-700 font-mono">0 EA</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-1">
+                                <span class="text-slate-600">당월 순증감</span>
+                                <span id="home-widget-net-qty" class="font-black text-slate-900 font-mono">+0 EA</span>
                             </div>
                         </div>
                     </div>
@@ -804,6 +951,237 @@
                             <div id="cal-day-event-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-1"></div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB: 월간 실적 현황판 (그래프 분석 대시보드) ==================== -->
+        <section id="tab-content-analytics" class="tab-section hidden space-y-6">
+            <!-- 최상단 컨트롤 바: 연도/월 선택 및 필터 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center border border-emerald-200 shadow-xs">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                                <span>월간 자재·수불 실적 그래프 현황판</span>
+                                <span id="analytics-header-period" class="px-2.5 py-0.5 text-xs font-extrabold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">2026년 9월</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">월별 입고·사용·출고·이동 물동량 추이와 품목별·거점별 점유율을 시각화 분석합니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center flex-wrap gap-2">
+                        <button type="button" onclick="exportMonthlyReportToCSV()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                            <span>실적 데이터 다운로드</span>
+                        </button>
+                        <button type="button" onclick="window.print()" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                            <span>현황판 리포트 인쇄</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 필터 셀렉터 바 -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 text-xs">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">분석 연도</label>
+                        <select id="analytics-select-year" onchange="renderMonthlyAnalytics()" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500">
+                            <option value="2026" selected>2026년</option>
+                            <option value="2025">2025년</option>
+                            <option value="2024">2024년</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">분석 대상 월</label>
+                        <select id="analytics-select-month" onchange="renderMonthlyAnalytics()" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500">
+                            <option value="1">1월</option>
+                            <option value="2">2월</option>
+                            <option value="3">3월</option>
+                            <option value="4">4월</option>
+                            <option value="5">5월</option>
+                            <option value="6">6월</option>
+                            <option value="7">7월</option>
+                            <option value="8">8월</option>
+                            <option value="9" selected>9월</option>
+                            <option value="10">10월</option>
+                            <option value="11">11월</option>
+                            <option value="12">12월</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">품목 분류</label>
+                        <select id="analytics-filter-category" onchange="renderMonthlyAnalytics()" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500">
+                            <option value="">전체 품목분류</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">보관 거점</label>
+                        <select id="analytics-filter-location" onchange="renderMonthlyAnalytics()" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500">
+                            <option value="">전체 거점</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-4 md:col-span-1 flex items-end">
+                        <button type="button" onclick="setAnalyticsToCurrentMonth()" class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition flex items-center justify-center gap-1 shadow-sm shadow-emerald-600/20">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <span>당월로 초기화</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 당월 핵심 실적 KPI 카드 4종 -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-bold">월간 총 입고 실적</span>
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <i data-lucide="log-in" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span id="kpi-monthly-in-qty" class="text-2xl sm:text-3xl font-black text-emerald-600 font-mono">0</span>
+                        <span class="text-xs text-slate-500 font-bold">EA</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-1" id="kpi-monthly-in-count">총 0건 입고 작업</div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-bold">월간 사용 & 출고 실적</span>
+                        <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <i data-lucide="truck" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span id="kpi-monthly-out-qty" class="text-2xl sm:text-3xl font-black text-blue-600 font-mono">0</span>
+                        <span class="text-xs text-slate-500 font-bold">EA</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-1" id="kpi-monthly-out-count">사용: 0 / 출고: 0</div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-bold">거점 간 자재 이동량</span>
+                        <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                            <i data-lucide="arrow-right-left" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span id="kpi-monthly-move-qty" class="text-2xl sm:text-3xl font-black text-amber-600 font-mono">0</span>
+                        <span class="text-xs text-slate-500 font-bold">EA</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-1" id="kpi-monthly-move-count">이동전표 0건 발생</div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-bold">당월 순수 재고 변동량</span>
+                        <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                            <i data-lucide="scale" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span id="kpi-monthly-net-qty" class="text-2xl sm:text-3xl font-black text-slate-900 font-mono">+0</span>
+                        <span class="text-xs text-slate-500 font-bold">EA</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-1" id="kpi-monthly-discard-count">폐기: 0 EA</div>
+                </div>
+            </div>
+
+            <!-- 메인 차트 그리드: 2행 구성 -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- 차트 1: 일자별 입고 vs 출고/사용 추이 (8 cols) -->
+                <div class="lg:col-span-8 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex flex-wrap items-center justify-between pb-2 border-b border-slate-100 gap-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+                            <h4 class="text-sm font-bold text-slate-900">일자별 입고 vs 출고(사용) 추이 그래프</h4>
+                        </div>
+                        <span class="text-[11px] text-slate-400">단위: 수량(EA) / 막대: 입고, 라인: 출고·사용</span>
+                    </div>
+                    <div class="h-64 sm:h-72 relative">
+                        <canvas id="analytics-chart-daily-trend"></canvas>
+                    </div>
+                </div>
+
+                <!-- 차트 2: 품목 구분별 수불 비중 도넛 차트 (4 cols) -->
+                <div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
+                            <h4 class="text-sm font-bold text-slate-900">품목 구분별 물동 비중</h4>
+                        </div>
+                        <span class="text-[10px] text-slate-400">완제·원료·부자재</span>
+                    </div>
+                    <div class="h-64 sm:h-72 relative flex items-center justify-center">
+                        <canvas id="analytics-chart-category-share"></canvas>
+                    </div>
+                </div>
+
+                <!-- 차트 3: 당월 물동량 TOP 5 품목 가로 막대 차트 (6 cols) -->
+                <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
+                            <h4 class="text-sm font-bold text-slate-900">당월 최다 입출고 품목 TOP 5</h4>
+                        </div>
+                        <span class="text-[11px] text-slate-400">물동량 합계 순위</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="analytics-chart-top-items"></canvas>
+                    </div>
+                </div>
+
+                <!-- 차트 4: 보관 거점별 물동량 점유율 차트 (6 cols) -->
+                <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-indigo-600"></i>
+                            <h4 class="text-sm font-bold text-slate-900">보관 거점별 실적 점유율</h4>
+                        </div>
+                        <span class="text-[11px] text-slate-400">공장 및 물류센터별</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="analytics-chart-location-share"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 당월 품목별 실적 집계 테이블 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 gap-2">
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-900">당월 품목별 수불 집계 명세표</h4>
+                        <p class="text-[11px] text-slate-500">조회된 월간 대상 품목들의 입고, 사용, 출고, 이동, 폐기 상세 수량</p>
+                    </div>
+                    <span id="analytics-table-count-badge" class="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded-lg text-xs">
+                        총 0개 품목
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 text-slate-700 border-b border-slate-200">
+                            <tr>
+                                <th class="py-2.5 px-3 font-semibold">구분</th>
+                                <th class="py-2.5 px-3 font-semibold">품목코드</th>
+                                <th class="py-2.5 px-3 font-semibold">품목명</th>
+                                <th class="py-2.5 px-3 font-semibold">규격</th>
+                                <th class="py-2.5 px-3 font-semibold text-right text-emerald-700 bg-emerald-50/50">월간 입고(+)</th>
+                                <th class="py-2.5 px-3 font-semibold text-right text-blue-700 bg-blue-50/50">월간 사용(-)</th>
+                                <th class="py-2.5 px-3 font-semibold text-right text-purple-700 bg-purple-50/50">월간 출고(-)</th>
+                                <th class="py-2.5 px-3 font-semibold text-right text-amber-700 bg-amber-50/50">거점 이동</th>
+                                <th class="py-2.5 px-3 font-semibold text-right text-rose-700 bg-rose-50/50">월간 폐기(-)</th>
+                                <th class="py-2.5 px-3 font-semibold text-right font-black bg-blue-100 text-blue-950">현재고</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analytics-table-tbody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        <tfoot id="analytics-table-tfoot" class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300"></tfoot>
+                    </table>
                 </div>
             </div>
         </section>
@@ -1320,6 +1698,114 @@
         </div>
     </div>
 
+    <!-- 모달 10: 홈 화면 작업창 위젯 넣기/빼기 관리 모달 -->
+    <div id="widget-manager-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div class="p-4 bg-indigo-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <h4 class="font-bold text-sm">홈 작업창(위젯) 넣기 / 빼기 설정</h4>
+                </div>
+                <button type="button" onclick="closeWidgetManagerModal()" class="text-white/80 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4 text-xs">
+                <p class="text-slate-500 text-[11px] leading-relaxed">
+                    홈 화면에 항상 띄워두고 싶은 작업창을 체크하세요. 체크 해제된 작업창은 홈에서 제외되며, 각 탭 메뉴를 통해서는 언제든 이용할 수 있습니다.
+                </p>
+
+                <div class="space-y-2 border border-slate-200 rounded-xl p-3 bg-slate-50 divide-y divide-slate-200">
+                    <label class="flex items-center justify-between pt-1 pb-1 cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="scan-line" class="w-4 h-4 text-blue-600"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">현장 스캔 & 빠른 수불창</span>
+                                <span class="text-[10px] text-slate-400">품목 빠른 조회 및 즉시 입·출고</span>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="chk-widget-scan-action" onchange="toggleWidgetVisibility('widget-scan-action', this.checked)" class="w-4 h-4 text-indigo-600 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between pt-2 pb-1 cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">안전재고 부족 경보창</span>
+                                <span class="text-[10px] text-slate-400">결품 위험 품목 실시간 리스트</span>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="chk-widget-low-safety" onchange="toggleWidgetVisibility('widget-low-safety', this.checked)" class="w-4 h-4 text-indigo-600 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between pt-2 pb-1 cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">오늘의 입출고 일정 & 캘린더</span>
+                                <span class="text-[10px] text-slate-400">당일 작업 및 구글 캘린더 연동</span>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="chk-widget-today-calendar" onchange="toggleWidgetVisibility('widget-today-calendar', this.checked)" class="w-4 h-4 text-indigo-600 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between pt-2 pb-1 cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="history" class="w-4 h-4 text-slate-600"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">최근 실시간 작업 로그</span>
+                                <span class="text-[10px] text-slate-400">최신 5건의 입출고 감사 기록</span>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="chk-widget-recent-history" onchange="toggleWidgetVisibility('widget-recent-history', this.checked)" class="w-4 h-4 text-indigo-600 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between pt-2 pb-1 cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-4 h-4 text-amber-600"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">원부자재 이동전표 빠른창</span>
+                                <span class="text-[10px] text-slate-400">거점 간 이동 전표 작성 및 인쇄</span>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="chk-widget-quick-transfer" onchange="toggleWidgetVisibility('widget-quick-transfer', this.checked)" class="w-4 h-4 text-indigo-600 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between pt-2 pb-1 cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="printer" class="w-4 h-4 text-emerald-600"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">물류 라벨 QR 즉시 발행창</span>
+                                <span class="text-[10px] text-slate-400">70x50mm QR 라벨 인쇄</span>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="chk-widget-quick-label" onchange="toggleWidgetVisibility('widget-quick-label', this.checked)" class="w-4 h-4 text-indigo-600 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between pt-2 pb-1 cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">당월 입출고 실적 및 추이 요약 그래프</span>
+                                <span class="text-[10px] text-slate-400">홈 화면 미니 차트 및 실적 지표</span>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="chk-widget-monthly-summary" onchange="toggleWidgetVisibility('widget-monthly-summary', this.checked)" class="w-4 h-4 text-indigo-600 rounded">
+                    </label>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="resetDefaultWidgets()" class="w-1/2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">
+                        전체 기본값 복원
+                    </button>
+                    <button type="button" onclick="closeWidgetManagerModal()" class="w-1/2 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm">
+                        설정 완료
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 토스트 알림창 컨테이너 -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -1327,6 +1813,17 @@
         /* ==================== 전역 상태 데이터 ==================== */
         let categoriesDB = ["완제품", "원료", "부자재"];
         let locationsDB = ["김포공장 A동", "김포2공장 B동", "인천 물류센터", "화성 자재창고"];
+
+        /* 홈 대시보드 위젯 활성화 상태 */
+        let homeWidgetsState = {
+            "widget-scan-action": true,
+            "widget-low-safety": true,
+            "widget-today-calendar": true,
+            "widget-recent-history": true,
+            "widget-quick-transfer": true,
+            "widget-quick-label": true,
+            "widget-monthly-summary": true
+        };
 
         let masterDB = [
             { category: "부자재", code: "ITEM-1001", name: "스테인리스 육각볼트", supplier: "(주)한국정밀", spec: "M8 x 25mm (SUS304)", unit: "EA", safety: 50 },
@@ -1371,6 +1868,15 @@
         let calSelectedDate = "2026-09-20";
         let calTypeFilter = "";
 
+        let chartDailyTrendInstance = null;
+        let chartCategoryShareInstance = null;
+        let chartTopItemsInstance = null;
+        let chartLocationShareInstance = null;
+        let homeChartMonthlyTrendInstance = null;
+
+        let analyticsCurrentYear = 2026;
+        let analyticsCurrentMonth = 9; // 1-indexed (9월)
+
         function saveStateToStorage() {
             try {
                 localStorage.setItem('wms_categories', JSON.stringify(categoriesDB));
@@ -1379,6 +1885,7 @@
                 localStorage.setItem('wms_inventory', JSON.stringify(inventoryDB));
                 localStorage.setItem('wms_history', JSON.stringify(historyDB));
                 localStorage.setItem('wms_schedules', JSON.stringify(schedulesDB));
+                localStorage.setItem('wms_home_widgets', JSON.stringify(homeWidgetsState));
             } catch (e) {
                 console.warn("Storage save failed:", e);
             }
@@ -1392,6 +1899,7 @@
                 const i = localStorage.getItem('wms_inventory'); if (i) inventoryDB = JSON.parse(i);
                 const h = localStorage.getItem('wms_history'); if (h) historyDB = JSON.parse(h);
                 const s = localStorage.getItem('wms_schedules'); if (s) schedulesDB = JSON.parse(s);
+                const w = localStorage.getItem('wms_home_widgets'); if (w) homeWidgetsState = Object.assign(homeWidgetsState, JSON.parse(w));
             } catch (e) {
                 console.warn("Storage load error:", e);
             }
@@ -1437,6 +1945,317 @@
                    text.substring(idx + query.length);
         }
 
+        /* ==================== 홈 대시보드 및 위젯 관리 로직 ==================== */
+        function openWidgetManagerModal() {
+            Object.keys(homeWidgetsState).forEach(id => {
+                const chk = document.getElementById(`chk-${id}`);
+                if (chk) chk.checked = !!homeWidgetsState[id];
+            });
+            document.getElementById('widget-manager-modal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeWidgetManagerModal() {
+            document.getElementById('widget-manager-modal')?.classList.add('hidden');
+        }
+
+        function toggleWidgetVisibility(widgetId, isVisible) {
+            homeWidgetsState[widgetId] = isVisible;
+            applyWidgetVisibility();
+            saveStateToStorage();
+        }
+
+        function removeWidget(widgetId) {
+            homeWidgetsState[widgetId] = false;
+            applyWidgetVisibility();
+            saveStateToStorage();
+            showToast("작업창이 홈에서 제외되었습니다. '홈 작업창 설정'에서 언제든 다시 켤 수 있습니다.", "info");
+        }
+
+        function resetDefaultWidgets() {
+            Object.keys(homeWidgetsState).forEach(k => homeWidgetsState[k] = true);
+            applyWidgetVisibility();
+            saveStateToStorage();
+            Object.keys(homeWidgetsState).forEach(id => {
+                const chk = document.getElementById(`chk-${id}`);
+                if (chk) chk.checked = true;
+            });
+            showToast("모든 홈 작업창이 기본값으로 복원되었습니다.", "success");
+        }
+
+        function applyWidgetVisibility() {
+            Object.keys(homeWidgetsState).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (homeWidgetsState[id]) {
+                        el.classList.remove('hidden');
+                    } else {
+                        el.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        function renderHomeDashboard() {
+            applyWidgetVisibility();
+
+            // 1. 현재 날짜/시간
+            const timeEl = document.getElementById('home-current-time');
+            if (timeEl) {
+                const now = new Date();
+                timeEl.innerText = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} 기준`;
+            }
+
+            // 2. KPI 통계
+            const masterCountEl = document.getElementById('home-kpi-master-count');
+            const totalStockEl = document.getElementById('home-kpi-total-stock');
+            const lowStockEl = document.getElementById('home-kpi-low-stock');
+            const todayEventsEl = document.getElementById('home-kpi-today-events');
+
+            const totalStock = inventoryDB.reduce((sum, item) => sum + item.quantity, 0);
+            const lowStockItems = masterDB.filter(m => {
+                const curQty = inventoryDB.filter(i => i.code === m.code).reduce((s, i) => s + i.quantity, 0);
+                return curQty < (m.safety || 20);
+            });
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayEvents = getEventsForDate(todayStr);
+
+            if (masterCountEl) masterCountEl.innerText = masterDB.length;
+            if (totalStockEl) totalStockEl.innerText = totalStock.toLocaleString();
+            if (lowStockEl) lowStockEl.innerText = lowStockItems.length;
+            if (todayEventsEl) todayEventsEl.innerText = todayEvents.length;
+
+            // 3. 위젯 1: 빠른 스캔 품목 기본값 세팅
+            if (!currentActiveScannedItem && inventoryDB.length > 0) {
+                currentActiveScannedItem = inventoryDB[0];
+            }
+            if (currentActiveScannedItem) {
+                document.getElementById('hq-item-badge').innerText = currentActiveScannedItem.category;
+                document.getElementById('hq-item-name').innerText = currentActiveScannedItem.name;
+                document.getElementById('hq-item-qty').innerText = `${currentActiveScannedItem.quantity} ${currentActiveScannedItem.unit || 'EA'}`;
+                document.getElementById('hq-item-code').innerText = currentActiveScannedItem.code;
+                document.getElementById('hq-item-loc').innerText = currentActiveScannedItem.location;
+            }
+
+            // 4. 위젯 2: 안전재고 부족 리스트 렌더링
+            const lowStockContainer = document.getElementById('home-low-stock-list');
+            if (lowStockContainer) {
+                if (lowStockItems.length === 0) {
+                    lowStockContainer.innerHTML = `
+                        <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-emerald-800 text-xs font-bold flex items-center justify-center gap-1.5">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+                            <span>현재 안전재고 미달 품목이 없습니다. 모든 재고가 안전 수준입니다.</span>
+                        </div>
+                    `;
+                } else {
+                    lowStockContainer.innerHTML = lowStockItems.map(m => {
+                        const curQty = inventoryDB.filter(i => i.code === m.code).reduce((s, i) => s + i.quantity, 0);
+                        return `
+                            <div class="p-2.5 bg-rose-50/60 hover:bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between transition">
+                                <div>
+                                    <div class="flex items-center gap-1.5 mb-0.5">
+                                        <span class="px-1.5 py-0.2 bg-rose-200 text-rose-800 text-[10px] font-bold rounded">결품주의</span>
+                                        <span class="font-bold text-slate-900 text-xs">${m.name}</span>
+                                        <span class="font-mono text-[10px] text-slate-400">${m.code}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500">안전재고 기준: <strong>${m.safety || 20}</strong> ${m.unit} | 거래처: ${m.supplier || '-'}</div>
+                                </div>
+                                <div class="text-right flex items-center gap-2">
+                                    <div>
+                                        <span class="text-xs font-black text-rose-600 block">${curQty} ${m.unit}</span>
+                                        <span class="text-[10px] text-rose-500 font-semibold block">-${(m.safety || 20) - curQty} 부족</span>
+                                    </div>
+                                    <button type="button" onclick="selectSuggestedItem('${m.code}'); switchTab('scan');" class="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition shadow-xs">
+                                        입고
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // 5. 위젯 3: 오늘 캘린더 일정 요약
+            const todayCalContainer = document.getElementById('home-today-calendar-list');
+            if (todayCalContainer) {
+                if (todayEvents.length === 0) {
+                    todayCalContainer.innerHTML = `
+                        <div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-xs space-y-1">
+                            <p class="font-bold text-slate-600">오늘 예정되거나 처리된 수불 일정이 없습니다.</p>
+                            <button type="button" onclick="openNewScheduleModal()" class="text-indigo-600 hover:underline font-bold text-[11px]">+ 새 입출고 일정 예약 등록</button>
+                        </div>
+                    `;
+                } else {
+                    todayCalContainer.innerHTML = todayEvents.slice(0, 4).map(ev => `
+                        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                ${getActionBadge(ev.type)}
+                                <div>
+                                    <span class="font-bold text-slate-900">${ev.name}</span>
+                                    <span class="text-[11px] text-slate-500 block">${ev.location} | ${ev.detail || ''}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-mono font-bold text-slate-900">${ev.qty} EA</span>
+                                ${ev.isScheduled ? `<span class="px-1 py-0.2 bg-indigo-100 text-indigo-700 rounded text-[9px] font-bold block">예약</span>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // 6. 위젯 4: 최근 작업 로그
+            const recentHistContainer = document.getElementById('home-recent-history-list');
+            if (recentHistContainer) {
+                const recents = historyDB.slice(0, 4);
+                if (recents.length === 0) {
+                    recentHistContainer.innerHTML = `<div class="p-3 text-center text-slate-400 text-xs">작업 이력이 없습니다.</div>`;
+                } else {
+                    recentHistContainer.innerHTML = recents.map(h => `
+                        <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-1.5">
+                                ${getActionBadge(h.type)}
+                                <div>
+                                    <span class="font-bold text-slate-900">${h.name}</span>
+                                    <span class="text-[10px] text-slate-400 block">${h.timestamp.substring(5)}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-mono font-bold ${h.type==='IN'?'text-emerald-600':h.type==='MOVE'?'text-amber-600':'text-rose-600'}">${h.type==='IN'?'+':'-'}${h.qty}</span>
+                                <span class="text-[10px] text-slate-500 block truncate max-w-[100px]">${h.toLoc !== '-' ? h.toLoc : h.reason}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // 7. 이동전표 뱃지
+            const slipBadge = document.getElementById('home-slip-count-badge');
+            if (slipBadge) {
+                const moveCount = historyDB.filter(h => h.type === 'MOVE').length;
+                slipBadge.innerText = `최근 ${moveCount}건 이동`;
+            }
+
+            renderHomeMonthlyWidget();
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        /* 홈 화면 내 월간 실적 미니 차트 렌더링 */
+        function renderHomeMonthlyWidget() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth() + 1;
+            const prefix = `${y}-${String(m).padStart(2, '0')}`;
+
+            const subtitle = document.getElementById('home-widget-month-subtitle');
+            if (subtitle) subtitle.innerText = `${y}년 ${m}월 실시간 물동량 현황`;
+
+            const thisMonthHist = historyDB.filter(h => h.timestamp.startsWith(prefix));
+            let inQ = 0, outQ = 0, moveQ = 0;
+
+            thisMonthHist.forEach(h => {
+                if (h.type === 'IN') inQ += h.qty;
+                else if (h.type === 'USE' || h.type === 'OUT') outQ += h.qty;
+                else if (h.type === 'MOVE') moveQ += h.qty;
+            });
+
+            const inEl = document.getElementById('home-widget-in-qty');
+            const outEl = document.getElementById('home-widget-out-qty');
+            const moveEl = document.getElementById('home-widget-move-qty');
+            const netEl = document.getElementById('home-widget-net-qty');
+
+            if (inEl) inEl.innerText = `${inQ.toLocaleString()} EA`;
+            if (outEl) outEl.innerText = `${outQ.toLocaleString()} EA`;
+            if (moveEl) moveEl.innerText = `${moveQ.toLocaleString()} EA`;
+            if (netEl) {
+                const diff = inQ - outQ;
+                netEl.innerText = `${diff >= 0 ? '+' : ''}${diff.toLocaleString()} EA`;
+                netEl.className = `font-black font-mono ${diff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+            }
+
+            // 미니 차트 일별 집계
+            const daysInMonth = new Date(y, m, 0).getDate();
+            const labels = [];
+            const inData = [];
+            const outData = [];
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                labels.push(`${d}일`);
+                const dayStr = `${prefix}-${String(d).padStart(2, '0')}`;
+                const dayRows = historyDB.filter(h => h.timestamp.startsWith(dayStr));
+                let dIn = 0, dOut = 0;
+                dayRows.forEach(h => {
+                    if (h.type === 'IN') dIn += h.qty;
+                    if (h.type === 'USE' || h.type === 'OUT') dOut += h.qty;
+                });
+                inData.push(dIn);
+                outData.push(dOut);
+            }
+
+            const canvas = document.getElementById('home-chart-monthly-trend');
+            if (canvas && typeof Chart !== 'undefined') {
+                if (homeChartMonthlyTrendInstance) homeChartMonthlyTrendInstance.destroy();
+                homeChartMonthlyTrendInstance = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: '입고량',
+                                data: inData,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                fill: true,
+                                tension: 0.3,
+                                borderWidth: 2,
+                                pointRadius: 2
+                            },
+                            {
+                                label: '출고/사용량',
+                                data: outData,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                borderWidth: 2,
+                                pointRadius: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 9 }, maxTicksLimit: 15 } },
+                            y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 9 } }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+
+        function executeHomeScan() {
+            const input = document.getElementById('home-quick-scan-input');
+            const val = input ? input.value.trim() : '';
+            if (!val) {
+                showToast("품목코드 또는 품목명을 입력하세요.", "warning");
+                return;
+            }
+            processScannedContent(val);
+            if (currentActiveScannedItem) {
+                document.getElementById('hq-item-badge').innerText = currentActiveScannedItem.category;
+                document.getElementById('hq-item-name').innerText = currentActiveScannedItem.name;
+                document.getElementById('hq-item-qty').innerText = `${currentActiveScannedItem.quantity} ${currentActiveScannedItem.unit || 'EA'}`;
+                document.getElementById('hq-item-code').innerText = currentActiveScannedItem.code;
+                document.getElementById('hq-item-loc').innerText = currentActiveScannedItem.location;
+            }
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
@@ -1447,7 +2266,9 @@
             if (targetBtn) targetBtn.classList.add('active');
             if (targetSection) targetSection.classList.remove('hidden');
 
-            if (tabName === 'label') {
+            if (tabName === 'home') {
+                renderHomeDashboard();
+            } else if (tabName === 'label') {
                 updatePreviewLabel();
             } else if (tabName === 'master') {
                 renderMasterTable();
@@ -1457,6 +2278,8 @@
                 renderStockLedger();
             } else if (tabName === 'calendar') {
                 renderWmsCalendar();
+            } else if (tabName === 'analytics') {
+                renderMonthlyAnalytics();
             } else if (tabName === 'history') {
                 renderHistoryTable();
             }
@@ -1831,6 +2654,435 @@
                 const gCalUrl = createGoogleCalendarUrl(gCalTitle, gCalDetails, location, date, date);
                 window.open(gCalUrl, '_blank');
             }
+        }
+
+        /* ==================== 월간 실적 현황판 (Analytics Dashboard) ==================== */
+        function setAnalyticsToCurrentMonth() {
+            const now = new Date();
+            const ySelect = document.getElementById('analytics-select-year');
+            const mSelect = document.getElementById('analytics-select-month');
+            const catSelect = document.getElementById('analytics-filter-category');
+            const locSelect = document.getElementById('analytics-filter-location');
+
+            if (ySelect) ySelect.value = now.getFullYear();
+            if (mSelect) mSelect.value = now.getMonth() + 1;
+            if (catSelect) catSelect.value = '';
+            if (locSelect) locSelect.value = '';
+
+            renderMonthlyAnalytics();
+            showToast("당월 실적으로 초기화되었습니다.", "info");
+        }
+
+        function renderMonthlyAnalytics() {
+            const y = parseInt(document.getElementById('analytics-select-year')?.value || "2026", 10);
+            const m = parseInt(document.getElementById('analytics-select-month')?.value || "9", 10);
+            const catFilter = document.getElementById('analytics-filter-category')?.value || '';
+            const locFilter = document.getElementById('analytics-filter-location')?.value || '';
+
+            analyticsCurrentYear = y;
+            analyticsCurrentMonth = m;
+
+            const headerPeriod = document.getElementById('analytics-header-period');
+            if (headerPeriod) headerPeriod.innerText = `${y}년 ${m}월`;
+
+            const mPrefix = `${y}-${String(m).padStart(2, '0')}`;
+            const daysInMonth = new Date(y, m, 0).getDate();
+
+            // 1. 해당 월 작업 이력 필터링
+            const targetHist = historyDB.filter(h => {
+                if (!h.timestamp.startsWith(mPrefix)) return false;
+                const master = masterDB.find(item => item.code === h.code);
+                if (catFilter && master && master.category !== catFilter) return false;
+                if (locFilter) {
+                    if (h.type === 'IN' && h.toLoc !== locFilter) return false;
+                    if (h.type === 'MOVE' && h.fromLoc !== locFilter && h.toLoc !== locFilter) return false;
+                    if ((h.type === 'USE' || h.type === 'OUT' || h.type === 'DISCARD') && h.fromLoc !== locFilter) return false;
+                }
+                return true;
+            });
+
+            // 2. 월간 핵심 KPI 집계
+            let totalIn = 0, countIn = 0;
+            let totalUse = 0, countUse = 0;
+            let totalOut = 0, countOut = 0;
+            let totalMove = 0, countMove = 0;
+            let totalDiscard = 0;
+
+            targetHist.forEach(h => {
+                if (h.type === 'IN') { totalIn += h.qty; countIn++; }
+                else if (h.type === 'USE') { totalUse += h.qty; countUse++; }
+                else if (h.type === 'OUT') { totalOut += h.qty; countOut++; }
+                else if (h.type === 'MOVE') { totalMove += h.qty; countMove++; }
+                else if (h.type === 'DISCARD') { totalDiscard += h.qty; }
+            });
+
+            const totalShipment = totalUse + totalOut;
+            const netStock = totalIn - (totalShipment + totalDiscard);
+
+            // KPI 카드 반영
+            document.getElementById('kpi-monthly-in-qty').innerText = totalIn.toLocaleString();
+            document.getElementById('kpi-monthly-in-count').innerText = `총 ${countIn}건 입고 작업`;
+
+            document.getElementById('kpi-monthly-out-qty').innerText = totalShipment.toLocaleString();
+            document.getElementById('kpi-monthly-out-count').innerText = `사용: ${totalUse.toLocaleString()} / 출고: ${totalOut.toLocaleString()}`;
+
+            document.getElementById('kpi-monthly-move-qty').innerText = totalMove.toLocaleString();
+            document.getElementById('kpi-monthly-move-count').innerText = `이동전표 ${countMove}건 발생`;
+
+            const netEl = document.getElementById('kpi-monthly-net-qty');
+            netEl.innerText = `${netStock >= 0 ? '+' : ''}${netStock.toLocaleString()}`;
+            netEl.className = `text-2xl sm:text-3xl font-black font-mono ${netStock >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
+            document.getElementById('kpi-monthly-discard-count').innerText = `폐기: ${totalDiscard.toLocaleString()} EA`;
+
+            // 3. 차트 1: 일자별 입고 vs 출고(사용) 추이 데이터 생성
+            const dailyLabels = [];
+            const dailyInData = [];
+            const dailyOutData = [];
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dayStr = `${mPrefix}-${String(d).padStart(2, '0')}`;
+                dailyLabels.push(`${d}일`);
+
+                let dIn = 0, dOut = 0;
+                targetHist.filter(h => h.timestamp.startsWith(dayStr)).forEach(h => {
+                    if (h.type === 'IN') dIn += h.qty;
+                    if (h.type === 'USE' || h.type === 'OUT') dOut += h.qty;
+                });
+                dailyInData.push(dIn);
+                dailyOutData.push(dOut);
+            }
+
+            renderDailyTrendChart(dailyLabels, dailyInData, dailyOutData);
+
+            // 4. 차트 2: 품목 구분별(완제/원료/부자재) 비중 집계
+            const catShareMap = {};
+            categoriesDB.forEach(c => catShareMap[c] = 0);
+
+            targetHist.forEach(h => {
+                const mObj = masterDB.find(item => item.code === h.code);
+                const cName = mObj ? mObj.category : '부자재';
+                if (!catShareMap[cName]) catShareMap[cName] = 0;
+                catShareMap[cName] += h.qty;
+            });
+
+            renderCategoryShareChart(catShareMap);
+
+            // 5. 차트 3: 최다 입출고 품목 TOP 5 집계
+            const itemActivityMap = {};
+            targetHist.forEach(h => {
+                if (!itemActivityMap[h.code]) {
+                    itemActivityMap[h.code] = { name: h.name, qty: 0 };
+                }
+                itemActivityMap[h.code].qty += h.qty;
+            });
+
+            const topItems = Object.entries(itemActivityMap)
+                .map(([code, data]) => ({ code, name: data.name, qty: data.qty }))
+                .sort((a, b) => b.qty - a.qty)
+                .slice(0, 5);
+
+            renderTopItemsChart(topItems);
+
+            // 6. 차트 4: 보관 거점별 실적 점유율
+            const locShareMap = {};
+            locationsDB.forEach(l => locShareMap[l] = 0);
+
+            targetHist.forEach(h => {
+                const targetLoc = h.toLoc !== '-' ? h.toLoc : h.fromLoc;
+                if (targetLoc && targetLoc !== '-') {
+                    if (!locShareMap[targetLoc]) locShareMap[targetLoc] = 0;
+                    locShareMap[targetLoc] += h.qty;
+                }
+            });
+
+            renderLocationShareChart(locShareMap);
+
+            // 7. 하단: 품목별 수불 집계 테이블 렌더링
+            renderMonthlySummaryTable(mPrefix, catFilter, locFilter);
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        /* 차트 1 렌더링: 일별 추이 (Bar + Line) */
+        function renderDailyTrendChart(labels, inData, outData) {
+            const canvas = document.getElementById('analytics-chart-daily-trend');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            if (chartDailyTrendInstance) chartDailyTrendInstance.destroy();
+
+            chartDailyTrendInstance = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '입고량 (+)',
+                            data: inData,
+                            backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                            borderColor: '#10b981',
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            order: 2
+                        },
+                        {
+                            label: '출고/사용량 (-)',
+                            data: outData,
+                            type: 'line',
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.15)',
+                            borderWidth: 3,
+                            tension: 0.35,
+                            fill: true,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Noto Sans KR', size: 11, weight: 'bold' } } },
+                        tooltip: {
+                            padding: 10,
+                            titleFont: { family: 'Noto Sans KR', size: 12 },
+                            bodyFont: { family: 'Noto Sans KR', size: 11 }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 10 } },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        /* 차트 2 렌더링: 품목 구분별 비중 (Doughnut) */
+        function renderCategoryShareChart(catMap) {
+            const canvas = document.getElementById('analytics-chart-category-share');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            if (chartCategoryShareInstance) chartCategoryShareInstance.destroy();
+
+            const labels = Object.keys(catMap);
+            const data = Object.values(catMap);
+            const colors = ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+
+            chartCategoryShareInstance = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { family: 'Noto Sans KR', size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const value = context.raw || 0;
+                                    const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${value.toLocaleString()} EA (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '62%'
+                }
+            });
+        }
+
+        /* 차트 3 렌더링: TOP 5 품목 가로 막대 */
+        function renderTopItemsChart(topItems) {
+            const canvas = document.getElementById('analytics-chart-top-items');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            if (chartTopItemsInstance) chartTopItemsInstance.destroy();
+
+            const labels = topItems.map(item => item.name);
+            const data = topItems.map(item => item.qty);
+
+            chartTopItemsInstance = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels.length > 0 ? labels : ['실적 데이터 없음'],
+                    datasets: [{
+                        label: '월간 총 이동/처리 수량',
+                        data: data.length > 0 ? data : [0],
+                        backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                        borderColor: '#f59e0b',
+                        borderRadius: 6,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` 처리량: ${ctx.raw.toLocaleString()} EA`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        y: { grid: { display: false }, ticks: { font: { family: 'Noto Sans KR', size: 11, weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+
+        /* 차트 4 렌더링: 거점별 실적 점유율 */
+        function renderLocationShareChart(locMap) {
+            const canvas = document.getElementById('analytics-chart-location-share');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            if (chartLocationShareInstance) chartLocationShareInstance.destroy();
+
+            const labels = Object.keys(locMap);
+            const data = Object.values(locMap);
+
+            chartLocationShareInstance = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '거점별 물동량',
+                        data: data,
+                        backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                        borderColor: '#6366f1',
+                        borderRadius: 6,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans KR', size: 10 } } },
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        /* 품목별 월간 수불 집계 테이블 */
+        function renderMonthlySummaryTable(monthPrefix, catFilter, locFilter) {
+            const tbody = document.getElementById('analytics-table-tbody');
+            const tfoot = document.getElementById('analytics-table-tfoot');
+            const countBadge = document.getElementById('analytics-table-count-badge');
+            if (!tbody || !tfoot) return;
+
+            const filteredMasters = masterDB.filter(m => !catFilter || m.category === catFilter);
+            if (countBadge) countBadge.innerText = `총 ${filteredMasters.length}개 품목`;
+
+            let sumIn = 0, sumUse = 0, sumOut = 0, sumMove = 0, sumDiscard = 0, sumCurrent = 0;
+
+            const rows = filteredMasters.map(m => {
+                let mIn = 0, mUse = 0, mOut = 0, mMove = 0, mDiscard = 0;
+
+                historyDB.filter(h => h.code === m.code && h.timestamp.startsWith(monthPrefix)).forEach(h => {
+                    if (locFilter) {
+                        if (h.type === 'IN' && h.toLoc !== locFilter) return;
+                        if (h.type === 'MOVE' && h.fromLoc !== locFilter && h.toLoc !== locFilter) return;
+                        if ((h.type === 'USE' || h.type === 'OUT' || h.type === 'DISCARD') && h.fromLoc !== locFilter) return;
+                    }
+                    if (h.type === 'IN') mIn += h.qty;
+                    else if (h.type === 'USE') mUse += h.qty;
+                    else if (h.type === 'OUT') mOut += h.qty;
+                    else if (h.type === 'MOVE') mMove += h.qty;
+                    else if (h.type === 'DISCARD') mDiscard += h.qty;
+                });
+
+                const currentStock = inventoryDB.filter(i => i.code === m.code && (!locFilter || i.location === locFilter)).reduce((s, i) => s + i.quantity, 0);
+
+                sumIn += mIn;
+                sumUse += mUse;
+                sumOut += mOut;
+                sumMove += mMove;
+                sumDiscard += mDiscard;
+                sumCurrent += currentStock;
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-2.5 px-3">${getCategoryBadge(m.category)}</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-slate-800">${m.code}</td>
+                        <td class="py-2.5 px-3 font-bold text-slate-900">${m.name}</td>
+                        <td class="py-2.5 px-3 text-slate-500">${m.spec || '-'}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/40">${mIn > 0 ? '+' + mIn.toLocaleString() : '-'}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-blue-700 bg-blue-50/40">${mUse > 0 ? '-' + mUse.toLocaleString() : '-'}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-purple-700 bg-purple-50/40">${mOut > 0 ? '-' + mOut.toLocaleString() : '-'}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-700 bg-amber-50/40">${mMove > 0 ? mMove.toLocaleString() : '-'}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-rose-700 bg-rose-50/40">${mDiscard > 0 ? '-' + mDiscard.toLocaleString() : '-'}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-black text-blue-900 bg-blue-100/50">${currentStock.toLocaleString()} ${m.unit || 'EA'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rows || `<tr><td colspan="10" class="py-6 text-center text-slate-400">당월 수불 데이터가 없습니다.</td></tr>`;
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="4" class="py-2.5 px-3 text-center">합 계</td>
+                    <td class="py-2.5 px-3 text-right font-mono text-emerald-700">+${sumIn.toLocaleString()}</td>
+                    <td class="py-2.5 px-3 text-right font-mono text-blue-700">-${sumUse.toLocaleString()}</td>
+                    <td class="py-2.5 px-3 text-right font-mono text-purple-700">-${sumOut.toLocaleString()}</td>
+                    <td class="py-2.5 px-3 text-right font-mono text-amber-700">${sumMove.toLocaleString()}</td>
+                    <td class="py-2.5 px-3 text-right font-mono text-rose-700">-${sumDiscard.toLocaleString()}</td>
+                    <td class="py-2.5 px-3 text-right font-mono font-black text-blue-900">${sumCurrent.toLocaleString()} EA</td>
+                </tr>
+            `;
+        }
+
+        /* 월간 실적 CSV 파일 다운로드 */
+        function exportMonthlyReportToCSV() {
+            const y = analyticsCurrentYear;
+            const m = analyticsCurrentMonth;
+            const prefix = `${y}-${String(m).padStart(2, '0')}`;
+
+            let csv = "\uFEFF품목구분,품목코드,품목명,규격,단위,월간입고,월간사용,월간출고,거점이동,월간폐기,현재고\n";
+
+            masterDB.forEach(item => {
+                let inQ = 0, useQ = 0, outQ = 0, moveQ = 0, disQ = 0;
+                historyDB.filter(h => h.code === item.code && h.timestamp.startsWith(prefix)).forEach(h => {
+                    if (h.type === 'IN') inQ += h.qty;
+                    else if (h.type === 'USE') useQ += h.qty;
+                    else if (h.type === 'OUT') outQ += h.qty;
+                    else if (h.type === 'MOVE') moveQ += h.qty;
+                    else if (h.type === 'DISCARD') disQ += h.qty;
+                });
+
+                const curStock = inventoryDB.filter(i => i.code === item.code).reduce((s, i) => s + i.quantity, 0);
+                csv += `"${item.category}","${item.code}","${item.name}","${item.spec || ''}","${item.unit || 'EA'}",${inQ},${useQ},${outQ},${moveQ},${disQ},${curStock}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `WMS_월간실적현황_${y}년${m}월.csv`;
+            link.click();
+            showToast(`${y}년 ${m}월 실적 CSV 파일이 다운로드되었습니다.`, "success");
         }
 
         function renderQrCodeUniversal(canvasId, fallbackId, text, size = 140) {
@@ -3211,6 +4463,7 @@
             const masterFilter = document.getElementById('master-filter-category');
             const invFilter = document.getElementById('inv-filter-category');
             const labelSearchCat = document.getElementById('label-search-category');
+            const analyticsFilter = document.getElementById('analytics-filter-category');
 
             const options = categoriesDB.map(c => `<option value="${c}">${c}</option>`).join('');
 
@@ -3218,6 +4471,7 @@
             if (mEditCat) mEditCat.innerHTML = options;
             if (masterFilter) masterFilter.innerHTML = `<option value="">전체 분류</option>` + options;
             if (invFilter) invFilter.innerHTML = `<option value="">전체 품목분류</option>` + options;
+            if (analyticsFilter) analyticsFilter.innerHTML = `<option value="">전체 품목분류</option>` + options;
             if (labelSearchCat) {
                 const curVal = labelSearchCat.value;
                 labelSearchCat.innerHTML = `<option value="">전체 구분</option>` + options;
@@ -3235,6 +4489,7 @@
             const actTarget = document.getElementById('action-target-location');
             const invFilter = document.getElementById('inv-filter-location');
             const ledgerFilter = document.getElementById('ledger-location');
+            const analyticsLocFilter = document.getElementById('analytics-filter-location');
 
             const options = locationsDB.map(l => `<option value="${l}">${l}</option>`).join('');
 
@@ -3242,6 +4497,7 @@
             if (actTarget) actTarget.innerHTML = options;
             if (invFilter) invFilter.innerHTML = `<option value="">전체 보관 거점</option>` + options;
             if (ledgerFilter) ledgerFilter.innerHTML = `<option value="">전체 거점</option>` + options;
+            if (analyticsLocFilter) analyticsLocFilter.innerHTML = `<option value="">전체 거점</option>` + options;
 
             renderLocationManagerList();
         }
@@ -3701,12 +4957,20 @@
             populateLocationSelects();
             populateLedgerItemSelect();
 
+            renderHomeDashboard();
             renderMasterTable();
             renderInventoryTable();
             renderStockLedger();
             renderWmsCalendar();
             renderHistoryTable();
             updatePreviewLabel();
+
+            // 당월 셀렉터 기본값 맞춤
+            const now = new Date();
+            const ySelect = document.getElementById('analytics-select-year');
+            const mSelect = document.getElementById('analytics-select-month');
+            if (ySelect) ySelect.value = now.getFullYear();
+            if (mSelect) mSelect.value = now.getMonth() + 1;
 
             const quickSamplesContainer = document.getElementById('quick-samples-list');
             if (quickSamplesContainer) {
