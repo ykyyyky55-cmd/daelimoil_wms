@@ -57,7 +57,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="text-base font-extrabold tracking-tight text-slate-900">SMART WMS</h1>
-                        <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full border border-blue-200">PRO V3.5</span>
+                        <span class="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full border border-blue-200">PRO V4.0</span>
                     </div>
                     <p class="text-xs text-slate-500 hidden sm:block">QR코드 기반 현장 자재·재고·수불 관리 시스템</p>
                 </div>
@@ -113,6 +113,13 @@
             <button type="button" onclick="switchTab('ledger')" id="tab-btn-ledger" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
                 <i data-lucide="book-open-check" class="w-4 h-4"></i>
                 <span>자재 수불부</span>
+            </button>
+            <button type="button" onclick="switchTab('calendar')" id="tab-btn-calendar" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
+                <i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i>
+                <span class="flex items-center gap-1">
+                    <span>수불·입출고 캘린더</span>
+                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-indigo-100 text-indigo-700 rounded-full">구글 연동</span>
+                </span>
             </button>
             <button type="button" onclick="switchTab('history')" id="tab-btn-history" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
                 <i data-lucide="history" class="w-4 h-4"></i>
@@ -675,7 +682,133 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 6: 작업 이력 ==================== -->
+        <!-- ==================== TAB 6: 수불·입출고 캘린더 (구글 캘린더 연동) ==================== -->
+        <section id="tab-content-calendar" class="tab-section hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- 좌측 메인 캘린더 영역 (8 cols) -->
+                <div class="lg:col-span-8 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <!-- 캘린더 헤더 & 월 이동 컨트롤 -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100 shadow-xs">
+                                <i data-lucide="calendar-days" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 id="cal-current-month-year" class="text-base sm:text-lg font-black text-slate-900">2026년 9월</h3>
+                                    <span class="px-2 py-0.5 text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full">실시간 WMS 수불 연동</span>
+                                </div>
+                                <p class="text-xs text-slate-500">날짜를 클릭하면 해당 일자의 입출고 상세 내역을 조회하고 구글 캘린더에 바로 등록할 수 있습니다.</p>
+                            </div>
+                        </div>
+
+                        <!-- 캘린더 월 전환 버튼 -->
+                        <div class="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                            <button type="button" onclick="moveCalendarMonth(-1)" class="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition" title="이전 달">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <button type="button" onclick="goTodayCalendar()" class="px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-white rounded-lg transition">
+                                오늘
+                            </button>
+                            <button type="button" onclick="moveCalendarMonth(1)" class="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition" title="다음 달">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 작업 유형 필터 뱃지 -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="text-[11px] font-bold text-slate-500 mr-1">표시 필터:</span>
+                            <button type="button" onclick="setCalendarTypeFilter('')" id="cal-filter-all" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-xs">전체</button>
+                            <button type="button" onclick="setCalendarTypeFilter('IN')" id="cal-filter-IN" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span>입고</span>
+                            </button>
+                            <button type="button" onclick="setCalendarTypeFilter('USE')" id="cal-filter-USE" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                <span>사용</span>
+                            </button>
+                            <button type="button" onclick="setCalendarTypeFilter('MOVE')" id="cal-filter-MOVE" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                <span>이동</span>
+                            </button>
+                            <button type="button" onclick="setCalendarTypeFilter('OUT')" id="cal-filter-OUT" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                                <span>출고</span>
+                            </button>
+                        </div>
+                        <button type="button" onclick="openNewScheduleModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center gap-1 shadow-sm shadow-indigo-500/20">
+                            <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+                            <span>입출고 일정 예약 등록</span>
+                        </button>
+                    </div>
+
+                    <!-- 캘린더 요일 헤더 -->
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500 py-1 border-b border-slate-100">
+                        <span class="text-rose-500">일</span>
+                        <span>월</span>
+                        <span>화</span>
+                        <span>수</span>
+                        <span>목</span>
+                        <span>금</span>
+                        <span class="text-blue-500">토</span>
+                    </div>
+
+                    <!-- 캘린더 날짜 그리드 -->
+                    <div id="calendar-grid-cells" class="grid grid-cols-7 gap-1 min-h-[360px]"></div>
+                </div>
+
+                <!-- 우측 선택 일자 상세 & 구글 캘린더 등록 액션 패널 (4 cols) -->
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <span class="text-[11px] font-bold text-indigo-600 block">선택된 날짜</span>
+                                <h4 id="cal-selected-date-text" class="text-lg font-black text-slate-900">2026-09-20 (일)</h4>
+                            </div>
+                            <span id="cal-selected-count-badge" class="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-xs border border-indigo-100">
+                                0건
+                            </span>
+                        </div>
+
+                        <!-- 구글 캘린더 원클릭 연동 배너 -->
+                        <div class="p-3 bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 border border-indigo-200 rounded-xl space-y-2">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                                </svg>
+                                <span class="text-xs font-extrabold text-slate-800">구글 캘린더(Google Calendar) 동기화</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">
+                                선택된 날짜의 WMS 수불 내역이나 입출고 일정을 클릭 한 번으로 내 구글 캘린더에 바로 등록하세요.
+                            </p>
+                            <div class="flex gap-1.5 pt-1">
+                                <button type="button" onclick="syncSelectedDayToGoogleCalendar()" class="flex-1 py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 shadow-xs">
+                                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                                    <span>구글 캘린더에 등록</span>
+                                </button>
+                                <button type="button" onclick="downloadSelectedDayIcs()" class="py-1.5 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1" title="애플/아웃룩 iCal 파일 내보내기">
+                                    <i data-lucide="download" class="w-3 h-3"></i>
+                                    <span>.ics</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 선택 일자 이벤트 리스트 -->
+                        <div>
+                            <span class="text-xs font-bold text-slate-700 block mb-2">당일 작업 및 일정 목록</span>
+                            <div id="cal-day-event-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 7: 작업 이력 ==================== -->
         <section id="tab-content-history" class="tab-section hidden space-y-4">
             <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -1123,6 +1256,70 @@
         </div>
     </div>
 
+    <!-- 모달 9: 신규 입출고 일정 예약 등록 (구글 캘린더 즉시 연동) -->
+    <div id="new-schedule-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div class="p-4 bg-indigo-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+                    <h4 class="font-bold text-sm">입출고 일정 예약 및 구글 캘린더 등록</h4>
+                </div>
+                <button type="button" onclick="closeNewScheduleModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-3.5 text-xs">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">일정 구분 *</label>
+                        <select id="sched-type" class="w-full px-2.5 py-2 border border-slate-300 rounded-xl bg-white font-bold text-slate-800">
+                            <option value="IN">📥 입고 예정</option>
+                            <option value="USE">🛠️ 생산 투입/사용 예정</option>
+                            <option value="MOVE">🔄 거점 간 이동 예정</option>
+                            <option value="OUT">📦 고객사 출고 예정</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">일정 일자 (달력) *</label>
+                        <input type="date" id="sched-date" class="w-full px-2.5 py-2 border border-slate-300 rounded-xl bg-white font-medium">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">대상 품목 선택 *</label>
+                    <select id="sched-item-select" onchange="onScheduleItemSelectChange(this.value)" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-medium"></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">예정 수량</label>
+                        <input type="number" id="sched-qty" value="50" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">관련 거점</label>
+                        <select id="sched-location" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">일정 제목 / 비고</label>
+                    <input type="text" id="sched-title" placeholder="예: 한국정밀 M8 볼트 2차 정기 입고" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-1">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="sched-direct-google-sync" checked class="w-4 h-4 text-indigo-600 rounded">
+                        <span class="font-bold text-indigo-950">등록 즉시 구글 캘린더 일정 추가 창 열기</span>
+                    </label>
+                    <p class="text-[10px] text-slate-500">WMS 캘린더에 저장됨과 동시에 내 구글 캘린더에 바로 등록할 수 있는 브라우저 탭을 실행합니다.</p>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="closeNewScheduleModal()" class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">취소</button>
+                    <button type="button" onclick="commitNewSchedule()" class="w-2/3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm">일정 등록 확정</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 토스트 알림창 컨테이너 -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -1155,12 +1352,24 @@
             { id: 7, timestamp: "2026-09-19 15:00", type: "USE", code: "ITEM-1003", name: "에폭시 수지 수지액", qty: 10, fromLoc: "화성 자재창고", toLoc: "-", reason: "품질 검사 및 소성 테스트 사용" }
         ];
 
+        /* 예약 일정 DB (캘린더 등록용) */
+        let schedulesDB = [
+            { id: "SCH-1", date: "2026-09-22", type: "IN", code: "ITEM-1001", name: "스테인리스 육각볼트", qty: 200, location: "김포공장 A동", title: "한국정밀 SUS304 추가 발주건 입고" },
+            { id: "SCH-2", date: "2026-09-25", type: "OUT", code: "ITEM-1002", name: "산업용 서보 모터", qty: 5, location: "김포2공장 B동", title: "라인 설치용 완제품 출고" }
+        ];
+
         let currentActiveScannedItem = null;
         let html5QrScanner = null;
         let isCameraActive = false;
         let parsedBulkStagingList = [];
         let ledgerCurrentCategory = "";
         let ledgerViewMode = "cumulative";
+
+        /* 캘린더 상태 */
+        let calCurrentYear = 2026;
+        let calCurrentMonth = 8; // 0-indexed: 8 = 9월
+        let calSelectedDate = "2026-09-20";
+        let calTypeFilter = "";
 
         function saveStateToStorage() {
             try {
@@ -1169,6 +1378,7 @@
                 localStorage.setItem('wms_master', JSON.stringify(masterDB));
                 localStorage.setItem('wms_inventory', JSON.stringify(inventoryDB));
                 localStorage.setItem('wms_history', JSON.stringify(historyDB));
+                localStorage.setItem('wms_schedules', JSON.stringify(schedulesDB));
             } catch (e) {
                 console.warn("Storage save failed:", e);
             }
@@ -1181,6 +1391,7 @@
                 const m = localStorage.getItem('wms_master'); if (m) masterDB = JSON.parse(m);
                 const i = localStorage.getItem('wms_inventory'); if (i) inventoryDB = JSON.parse(i);
                 const h = localStorage.getItem('wms_history'); if (h) historyDB = JSON.parse(h);
+                const s = localStorage.getItem('wms_schedules'); if (s) schedulesDB = JSON.parse(s);
             } catch (e) {
                 console.warn("Storage load error:", e);
             }
@@ -1244,6 +1455,8 @@
                 renderInventoryTable();
             } else if (tabName === 'ledger') {
                 renderStockLedger();
+            } else if (tabName === 'calendar') {
+                renderWmsCalendar();
             } else if (tabName === 'history') {
                 renderHistoryTable();
             }
@@ -1255,12 +1468,368 @@
             if (banner) banner.classList.add('hidden');
         }
 
-        /* ==================== QR 생성 및 라벨발행 로직 ==================== */
         function setTodayFormDate() {
-            const dateInput = document.getElementById('form-date');
-            if (dateInput) {
-                dateInput.value = new Date().toISOString().split('T')[0];
+            const input = document.getElementById('form-date');
+            if (input) {
+                input.value = new Date().toISOString().split('T')[0];
                 updatePreviewLabel();
+            }
+        }
+
+        /* ==================== 캘린더 & 구글 캘린더 연동 로직 ==================== */
+        function moveCalendarMonth(delta) {
+            calCurrentMonth += delta;
+            if (calCurrentMonth < 0) {
+                calCurrentMonth = 11;
+                calCurrentYear--;
+            } else if (calCurrentMonth > 11) {
+                calCurrentMonth = 0;
+                calCurrentYear++;
+            }
+            renderWmsCalendar();
+        }
+
+        function goTodayCalendar() {
+            const today = new Date();
+            calCurrentYear = today.getFullYear();
+            calCurrentMonth = today.getMonth();
+            calSelectedDate = today.toISOString().split('T')[0];
+            renderWmsCalendar();
+        }
+
+        function setCalendarTypeFilter(type) {
+            calTypeFilter = type;
+            ['all', 'IN', 'USE', 'MOVE', 'OUT'].forEach(t => {
+                const btn = document.getElementById(`cal-filter-${t}`);
+                if (!btn) return;
+                if ((t === 'all' && !type) || t === type) {
+                    btn.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-xs";
+                } else {
+                    btn.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition";
+                }
+            });
+            renderWmsCalendar();
+        }
+
+        function selectCalendarDate(dateStr) {
+            calSelectedDate = dateStr;
+            renderWmsCalendar();
+        }
+
+        function getEventsForDate(dateStr) {
+            const events = [];
+
+            historyDB.forEach(h => {
+                const hDate = h.timestamp.split(' ')[0];
+                if (hDate === dateStr) {
+                    if (!calTypeFilter || h.type === calTypeFilter) {
+                        events.push({
+                            id: `HIST-${h.id}`,
+                            isScheduled: false,
+                            timestamp: h.timestamp,
+                            type: h.type,
+                            code: h.code,
+                            name: h.name,
+                            qty: h.qty,
+                            location: h.toLoc !== '-' ? h.toLoc : h.fromLoc,
+                            detail: h.reason || (h.type === 'MOVE' ? `${h.fromLoc} ➔ ${h.toLoc}` : '')
+                        });
+                    }
+                }
+            });
+
+            schedulesDB.forEach(s => {
+                if (s.date === dateStr) {
+                    if (!calTypeFilter || s.type === calTypeFilter) {
+                        events.push({
+                            id: s.id,
+                            isScheduled: true,
+                            timestamp: `${s.date} (예정)`,
+                            type: s.type,
+                            code: s.code,
+                            name: s.name,
+                            qty: s.qty,
+                            location: s.location,
+                            detail: s.title || '입출고 예정'
+                        });
+                    }
+                }
+            });
+
+            return events;
+        }
+
+        function renderWmsCalendar() {
+            const titleEl = document.getElementById('cal-current-month-year');
+            const gridEl = document.getElementById('calendar-grid-cells');
+            if (!titleEl || !gridEl) return;
+
+            titleEl.innerText = `${calCurrentYear}년 ${calCurrentMonth + 1}월`;
+
+            const firstDay = new Date(calCurrentYear, calCurrentMonth, 1).getDay();
+            const daysInMonth = new Date(calCurrentYear, calCurrentMonth + 1, 0).getDate();
+            const prevMonthDays = new Date(calCurrentYear, calCurrentMonth, 0).getDate();
+
+            let cellsHtml = '';
+
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const dayNum = prevMonthDays - i;
+                cellsHtml += `
+                    <div class="p-1.5 bg-slate-50/50 border border-slate-100 rounded-xl min-h-[64px] opacity-35 text-slate-400 text-xs select-none">
+                        <span class="font-bold">${dayNum}</span>
+                    </div>
+                `;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const mStr = String(calCurrentMonth + 1).padStart(2, '0');
+                const dStr = String(day).padStart(2, '0');
+                const dateStr = `${calCurrentYear}-${mStr}-${dStr}`;
+
+                const isToday = dateStr === todayStr;
+                const isSelected = dateStr === calSelectedDate;
+
+                const dayEvents = getEventsForDate(dateStr);
+                const count = dayEvents.length;
+
+                let badgesHtml = '';
+                if (count > 0) {
+                    badgesHtml = `
+                        <div class="mt-1 flex flex-col gap-0.5">
+                            ${dayEvents.slice(0, 2).map(ev => {
+                                const color = ev.type === 'IN' ? 'bg-emerald-100 text-emerald-800' :
+                                              ev.type === 'USE' ? 'bg-blue-100 text-blue-800' :
+                                              ev.type === 'MOVE' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800';
+                                return `<span class="truncate px-1 py-0.2 rounded text-[9px] font-bold ${color}">${ev.type==='IN'?'입고':ev.type==='USE'?'사용':ev.type==='MOVE'?'이동':'출고'} ${ev.qty}</span>`;
+                            }).join('')}
+                            ${count > 2 ? `<span class="text-[9px] font-bold text-slate-400">+${count - 2}건</span>` : ''}
+                        </div>
+                    `;
+                }
+
+                cellsHtml += `
+                    <div onclick="selectCalendarDate('${dateStr}')" class="p-1.5 border rounded-xl min-h-[68px] cursor-pointer transition flex flex-col justify-between ${isSelected ? 'border-indigo-600 bg-indigo-50/40 ring-2 ring-indigo-500/30' : 'border-slate-200 bg-white hover:border-indigo-300'}">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black ${isToday ? 'w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center' : 'text-slate-800'}">${day}</span>
+                            ${count > 0 ? `<span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>` : ''}
+                        </div>
+                        ${badgesHtml}
+                    </div>
+                `;
+            }
+
+            gridEl.innerHTML = cellsHtml;
+            renderSelectedDayDetails();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function renderSelectedDayDetails() {
+            const dateText = document.getElementById('cal-selected-date-text');
+            const countBadge = document.getElementById('cal-selected-count-badge');
+            const listEl = document.getElementById('cal-day-event-list');
+            if (!dateText || !listEl) return;
+
+            const dObj = new Date(calSelectedDate);
+            const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+            const dayName = daysOfWeek[dObj.getDay()] || '';
+
+            dateText.innerText = `${calSelectedDate} (${dayName})`;
+
+            const events = getEventsForDate(calSelectedDate);
+            if (countBadge) countBadge.innerText = `${events.length}건`;
+
+            if (events.length === 0) {
+                listEl.innerHTML = `
+                    <div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-1">
+                        <i data-lucide="calendar-x" class="w-6 h-6 mx-auto text-slate-300"></i>
+                        <p class="text-xs font-bold text-slate-600">등록된 작업이나 일정이 없습니다.</p>
+                        <p class="text-[11px] text-slate-400">우측 상단 '입출고 일정 예약 등록' 버튼을 눌러 새 일정을 추가할 수 있습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = events.map(ev => {
+                const borderClass = ev.type === 'IN' ? 'border-l-emerald-500' :
+                                    ev.type === 'USE' ? 'border-l-blue-500' :
+                                    ev.type === 'MOVE' ? 'border-l-amber-500' : 'border-l-purple-500';
+
+                return `
+                    <div class="p-3 bg-slate-50 hover:bg-indigo-50/50 border border-slate-200 border-l-4 ${borderClass} rounded-xl transition space-y-1">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                ${getActionBadge(ev.type)}
+                                <span class="font-bold text-slate-900">${ev.name}</span>
+                                ${ev.isScheduled ? `<span class="px-1.5 py-0.2 bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold">예약</span>` : ''}
+                            </div>
+                            <span class="font-mono font-black text-xs text-slate-900">${ev.qty} EA</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] text-slate-500">
+                            <span>거점: <strong class="text-slate-700">${ev.location || '-'}</strong></span>
+                            <span class="truncate max-w-[130px]">${ev.detail || ''}</span>
+                        </div>
+                        <div class="pt-1 flex justify-end">
+                            <button type="button" onclick="openSingleEventGoogleCalendar('${encodeURIComponent(JSON.stringify(ev))}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3 h-3"></i>
+                                <span>구글 캘린더에 개별 등록</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function createGoogleCalendarUrl(title, details, location, startDateStr, endDateStr) {
+            const startFormatted = startDateStr.replace(/-/g, '') + 'T090000';
+            const endFormatted = (endDateStr || startDateStr).replace(/-/g, '') + 'T180000';
+
+            const params = new URLSearchParams({
+                action: 'TEMPLATE',
+                text: title,
+                details: details,
+                location: location || '사내 물류창고',
+                dates: `${startFormatted}/${endFormatted}`
+            });
+
+            return `https://calendar.google.com/calendar/render?${params.toString()}`;
+        }
+
+        function syncSelectedDayToGoogleCalendar() {
+            const events = getEventsForDate(calSelectedDate);
+            if (events.length === 0) {
+                showToast("등록할 작업이나 일정이 없습니다.", "warning");
+                return;
+            }
+
+            const title = `[WMS 자재수불] ${calSelectedDate} 입출고 작업 (${events.length}건)`;
+            let details = `[스마트 WMS 실시간 수불 현황]\n일자: ${calSelectedDate}\n\n`;
+
+            events.forEach((ev, idx) => {
+                const actionName = ev.type === 'IN' ? '입고' : ev.type === 'USE' ? '사용' : ev.type === 'MOVE' ? '이동' : '출고';
+                details += `${idx + 1}. [${actionName}] ${ev.name} (${ev.code}) - ${ev.qty} EA\n   거점: ${ev.location} / 사유: ${ev.detail}\n`;
+            });
+
+            const gCalUrl = createGoogleCalendarUrl(title, details, events[0]?.location || '', calSelectedDate, calSelectedDate);
+            window.open(gCalUrl, '_blank');
+            showToast("구글 캘린더 등록 창이 새 탭에서 열렸습니다.", "success");
+        }
+
+        function openSingleEventGoogleCalendar(encodedEv) {
+            const ev = JSON.parse(decodeURIComponent(encodedEv));
+            const actionName = ev.type === 'IN' ? '입고' : ev.type === 'USE' ? '사용' : ev.type === 'MOVE' ? '이동' : '출고';
+            const title = `[WMS ${actionName}] ${ev.name} (${ev.qty} EA)`;
+            const details = `품목코드: ${ev.code}\n품목명: ${ev.name}\n수량: ${ev.qty}\n보관/작업 거점: ${ev.location}\n비고/사유: ${ev.detail}`;
+
+            const gCalUrl = createGoogleCalendarUrl(title, details, ev.location || '', calSelectedDate, calSelectedDate);
+            window.open(gCalUrl, '_blank');
+        }
+
+        function downloadSelectedDayIcs() {
+            const events = getEventsForDate(calSelectedDate);
+            if (events.length === 0) {
+                showToast("다운로드할 일정이 없습니다.", "warning");
+                return;
+            }
+
+            const startFormatted = calSelectedDate.replace(/-/g, '') + 'T090000';
+            const endFormatted = calSelectedDate.replace(/-/g, '') + 'T180000';
+
+            let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Smart WMS PRO//KO\r\nCALSCALE:GREGORIAN\r\n";
+
+            events.forEach((ev, idx) => {
+                const actionName = ev.type === 'IN' ? '입고' : ev.type === 'USE' ? '사용' : ev.type === 'MOVE' ? '이동' : '출고';
+                icsContent += "BEGIN:VEVENT\r\n";
+                icsContent += `UID:wms-${calSelectedDate}-${idx}@smartwms.local\r\n`;
+                icsContent += `DTSTAMP:${startFormatted}Z\r\n`;
+                icsContent += `DTSTART:${startFormatted}\r\n`;
+                icsContent += `DTEND:${endFormatted}\r\n`;
+                icsContent += `SUMMARY:[WMS ${actionName}] ${ev.name} (${ev.qty} EA)\r\n`;
+                icsContent += `DESCRIPTION:코드: ${ev.code} / 거점: ${ev.location} / 사유: ${ev.detail}\r\n`;
+                icsContent += `LOCATION:${ev.location || '공장 창고'}\r\n`;
+                icsContent += "END:VEVENT\r\n";
+            });
+
+            icsContent += "END:VCALENDAR\r\n";
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `WMS_캘린더_${calSelectedDate}.ics`;
+            link.click();
+            showToast("iCal(.ics) 파일이 다운로드되었습니다.", "success");
+        }
+
+        function openNewScheduleModal() {
+            const select = document.getElementById('sched-item-select');
+            if (select) {
+                select.innerHTML = masterDB.map(m => `<option value="${m.code}">[${m.category}] ${m.name} (${m.code})</option>`).join('');
+            }
+            const locSelect = document.getElementById('sched-location');
+            if (locSelect) {
+                locSelect.innerHTML = locationsDB.map(l => `<option value="${l}">${l}</option>`).join('');
+            }
+            const dateInput = document.getElementById('sched-date');
+            if (dateInput) dateInput.value = calSelectedDate;
+
+            onScheduleItemSelectChange(masterDB[0]?.code);
+            document.getElementById('new-schedule-modal')?.classList.remove('hidden');
+        }
+
+        function closeNewScheduleModal() {
+            document.getElementById('new-schedule-modal')?.classList.add('hidden');
+        }
+
+        function onScheduleItemSelectChange(code) {
+            const item = masterDB.find(m => m.code === code);
+            const titleInput = document.getElementById('sched-title');
+            if (item && titleInput) {
+                const typeText = document.getElementById('sched-type')?.value === 'IN' ? '입고' : '출고';
+                titleInput.value = `${item.name} 정기 ${typeText} 예정`;
+            }
+        }
+
+        function commitNewSchedule() {
+            const type = document.getElementById('sched-type')?.value || 'IN';
+            const date = document.getElementById('sched-date')?.value;
+            const code = document.getElementById('sched-item-select')?.value;
+            const qty = parseInt(document.getElementById('sched-qty')?.value, 10) || 1;
+            const location = document.getElementById('sched-location')?.value || locationsDB[0];
+            const title = document.getElementById('sched-title')?.value.trim() || '입출고 일정';
+            const directSync = document.getElementById('sched-direct-google-sync')?.checked;
+
+            if (!date || !code) {
+                showToast("날짜와 품목을 선택해주세요.", "warning");
+                return;
+            }
+
+            const master = masterDB.find(m => m.code === code);
+            const newSched = {
+                id: `SCH-${Date.now()}`,
+                date,
+                type,
+                code,
+                name: master ? master.name : code,
+                qty,
+                location,
+                title
+            };
+
+            schedulesDB.push(newSched);
+            saveStateToStorage();
+            closeNewScheduleModal();
+            calSelectedDate = date;
+            renderWmsCalendar();
+            showToast("새 일정이 WMS 캘린더에 예약 등록되었습니다.", "success");
+
+            if (directSync) {
+                const actionName = type === 'IN' ? '입고' : type === 'USE' ? '사용' : type === 'MOVE' ? '이동' : '출고';
+                const gCalTitle = `[WMS ${actionName} 예정] ${newSched.name} (${qty} EA)`;
+                const gCalDetails = `제목: ${title}\n품목코드: ${code}\n수량: ${qty}\n보관/입고 거점: ${location}`;
+                const gCalUrl = createGoogleCalendarUrl(gCalTitle, gCalDetails, location, date, date);
+                window.open(gCalUrl, '_blank');
             }
         }
 
@@ -1967,22 +2536,45 @@
             renderHistoryTable();
 
             showToast(`[${currentActiveScannedItem.name}] 작업 처리가 완료되었습니다.`, "success");
-
-            if (type === 'MOVE') {
-                generateAndOpenTransferSlip({
-                    code: currentActiveScannedItem.code,
-                    name: currentActiveScannedItem.name,
-                    spec: currentActiveScannedItem.spec,
-                    supplier: currentActiveScannedItem.supplier,
-                    unit: currentActiveScannedItem.unit,
-                    qty: qty,
-                    fromLoc: fromLoc,
-                    toLoc: toLoc
-                });
-            }
         }
 
+        /* ==================== 이동전표 모달 로직 ==================== */
         function openTransferSlipModal() {
+            const today = new Date().toISOString().split('T')[0];
+            const docNo = `TR-${today.replace(/-/g, '')}-001`;
+
+            document.getElementById('slip-doc-no').innerText = docNo;
+            document.getElementById('slip-doc-date').innerText = today;
+            document.getElementById('slip-from-loc').innerText = locationsDB[0] || '김포공장 A동';
+            document.getElementById('slip-to-loc').innerText = locationsDB[1] || '김포2공장 B동';
+
+            const tbody = document.getElementById('slip-items-tbody');
+            const totalEl = document.getElementById('slip-total-qty');
+
+            const moveHistory = historyDB.filter(h => h.type === 'MOVE');
+            if (moveHistory.length > 0) {
+                let total = 0;
+                tbody.innerHTML = moveHistory.slice(0, 5).map((h, idx) => {
+                    total += h.qty;
+                    const m = masterDB.find(item => item.code === h.code);
+                    return `
+                        <tr>
+                            <td class="py-2 px-3">${idx + 1}</td>
+                            <td class="py-2 px-3 font-mono font-bold">${h.code}</td>
+                            <td class="py-2 px-3 font-bold">${h.name}</td>
+                            <td class="py-2 px-3">${m ? m.spec : '-'}</td>
+                            <td class="py-2 px-3">${m ? m.supplier : '-'}</td>
+                            <td class="py-2 px-3">${m ? m.unit : 'EA'}</td>
+                            <td class="py-2 px-3 text-right font-black text-blue-700">${h.qty}</td>
+                        </tr>
+                    `;
+                }).join('');
+                totalEl.innerText = `${total} EA`;
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-400">최근 이동 이력이 없습니다.</td></tr>`;
+                totalEl.innerText = `0 EA`;
+            }
+
             document.getElementById('transfer-slip-modal')?.classList.remove('hidden');
         }
 
@@ -1990,43 +2582,29 @@
             document.getElementById('transfer-slip-modal')?.classList.add('hidden');
         }
 
-        function generateAndOpenTransferSlip(itemData) {
-            const today = new Date().toISOString().split('T')[0];
-            const randNo = Math.floor(100 + Math.random() * 900);
-
-            document.getElementById('slip-doc-no').innerText = `TR-${today.replace(/-/g, '')}-${randNo}`;
-            document.getElementById('slip-doc-date').innerText = today;
-            document.getElementById('slip-from-loc').innerText = itemData.fromLoc || "김포공장 A동";
-            document.getElementById('slip-to-loc').innerText = itemData.toLoc || "김포2공장 B동";
-
-            document.getElementById('slip-items-tbody').innerHTML = `
-                <tr>
-                    <td class="py-2 px-3">1</td>
-                    <td class="py-2 px-3 font-mono font-bold">${itemData.code}</td>
-                    <td class="py-2 px-3 font-bold">${itemData.name}</td>
-                    <td class="py-2 px-3">${itemData.spec || '-'}</td>
-                    <td class="py-2 px-3">${itemData.supplier || '-'}</td>
-                    <td class="py-2 px-3">${itemData.unit || 'EA'}</td>
-                    <td class="py-2 px-3 text-right font-black text-blue-700">${itemData.qty}</td>
-                </tr>
-            `;
-            document.getElementById('slip-total-qty').innerText = `${itemData.qty} ${itemData.unit || 'EA'}`;
-            openTransferSlipModal();
-        }
-
         function openSlipByHistoryId(id) {
             const h = historyDB.find(item => String(item.id) === String(id));
             if (!h) return;
-            generateAndOpenTransferSlip({
-                code: h.code,
-                name: h.name,
-                spec: '-',
-                supplier: '-',
-                unit: 'EA',
-                qty: h.qty,
-                fromLoc: h.fromLoc,
-                toLoc: h.toLoc
-            });
+            openTransferSlipModal();
+            const today = h.timestamp.split(' ')[0];
+            document.getElementById('slip-doc-date').innerText = today;
+            document.getElementById('slip-from-loc').innerText = h.fromLoc;
+            document.getElementById('slip-to-loc').innerText = h.toLoc;
+
+            const m = masterDB.find(item => item.code === h.code);
+            const tbody = document.getElementById('slip-items-tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td class="py-2 px-3">1</td>
+                    <td class="py-2 px-3 font-mono font-bold">${h.code}</td>
+                    <td class="py-2 px-3 font-bold">${h.name}</td>
+                    <td class="py-2 px-3">${m ? m.spec : '-'}</td>
+                    <td class="py-2 px-3">${m ? m.supplier : '-'}</td>
+                    <td class="py-2 px-3">${m ? m.unit : 'EA'}</td>
+                    <td class="py-2 px-3 text-right font-black text-blue-700">${h.qty}</td>
+                </tr>
+            `;
+            document.getElementById('slip-total-qty').innerText = `${h.qty} ${m ? m.unit : 'EA'}`;
         }
 
         /* ==================== 자재 수불부 로직 ==================== */
@@ -3030,7 +3608,8 @@
                 locations: locationsDB,
                 master: masterDB,
                 inventory: inventoryDB,
-                history: historyDB
+                history: historyDB,
+                schedules: schedulesDB
             };
             const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
             const link = document.createElement('a');
@@ -3070,6 +3649,7 @@
                         masterDB = data.master;
                         inventoryDB = data.inventory;
                         if (data.history) historyDB = data.history;
+                        if (data.schedules) schedulesDB = data.schedules;
 
                         saveStateToStorage();
                         populateCategorySelects();
@@ -3079,6 +3659,7 @@
                         renderInventoryTable();
                         renderStockLedger();
                         renderHistoryTable();
+                        renderWmsCalendar();
                         updatePreviewLabel();
 
                         closeBackupModal();
@@ -3102,6 +3683,11 @@
             const dateInput = document.getElementById('form-date');
             if (dateInput) dateInput.value = today;
 
+            calSelectedDate = today;
+            const tDate = new Date();
+            calCurrentYear = tDate.getFullYear();
+            calCurrentMonth = tDate.getMonth();
+
             const lStartDate = document.getElementById('ledger-start-date');
             const lEndDate = document.getElementById('ledger-end-date');
             if (lStartDate) {
@@ -3118,6 +3704,7 @@
             renderMasterTable();
             renderInventoryTable();
             renderStockLedger();
+            renderWmsCalendar();
             renderHistoryTable();
             updatePreviewLabel();
 
