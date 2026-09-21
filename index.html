@@ -2784,8 +2784,11 @@
         /* =========================================================
            [수정 2] 구글 시트로 데이터를 실시간 저장하도록 함수 변경
            ========================================================= */
+        /* =========================================================
+           [수정 2] 구글 시트로 데이터를 실시간 저장하도록 함수 변경
+           ========================================================= */
         async function saveStateToStorage() {
-            // 만약을 위해 기존 로컬(기기 내부)에도 백업용으로 저장
+            // 1. 만약을 위해 내 기기(로컬) 내부에도 백업용으로 동시 저장
             try {
                 localStorage.setItem('wms_categories', JSON.stringify(categoriesDB));
                 localStorage.setItem('wms_locations', JSON.stringify(locationsDB));
@@ -2802,7 +2805,7 @@
                 console.warn("Storage save failed:", e);
             }
 
-            // 전체 데이터를 모아서 구글 시트 백엔드로 전송
+            // 2. 구글 시트로 보낼 전체 데이터 포장
             const payload = {
                 categories: categoriesDB,
                 locations: locationsDB,
@@ -2816,13 +2819,16 @@
                 users: usersDB
             };
 
+            // 3. 구글 시트로 강제 전송 (보안 정책 우회 적용)
             if (GAS_URL.startsWith("https://script.google.com")) {
                 try {
-                    // CORS 에러 방지를 위해 text/plain으로 전송
                     fetch(GAS_URL, {
                         method: "POST",
+                        mode: "no-cors",  // ★ 이 부분이 핵심입니다! 브라우저 보안 차단을 우회합니다.
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
                         body: JSON.stringify(payload)
+                    }).then(() => {
+                        console.log("구글 시트에 백그라운드 저장 요청 완료");
                     }).catch(err => console.error("구글 시트 동기화 에러:", err));
                 } catch (e) {
                     console.error("Fetch 요청 에러:", e);
