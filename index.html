@@ -6113,6 +6113,7 @@
             document.getElementById('master-edit-modal')?.classList.add('hidden');
         }
 
+        // [수정] 품목 마스터 저장 시, 품목명이 바뀌면 모든 이력(History)까지 싹 다 업데이트!
         function saveMasterItem() {
             const category = document.getElementById('m-edit-category')?.value;
             const code = document.getElementById('m-edit-code')?.value.trim().toUpperCase();
@@ -6128,6 +6129,7 @@
             }
 
             if (editingMasterCode) {
+                // 1. 마스터 정보 갱신
                 const item = masterDB.find(m => m.code === editingMasterCode);
                 if (item) {
                     item.category = category;
@@ -6137,6 +6139,8 @@
                     item.unit = unit;
                     item.safety = safety;
                 }
+
+                // 2. 재고(Inventory) DB 갱신
                 inventoryDB.forEach(inv => {
                     if (inv.code === editingMasterCode) {
                         inv.category = category;
@@ -6146,7 +6150,22 @@
                         inv.unit = unit;
                     }
                 });
-                showToast(`[${code}] 마스터 정보가 수정되었습니다.`, "success");
+
+                // 3. 작업 이력(History) DB의 예전 품목명도 새 이름으로 일괄 갱신!
+                historyDB.forEach(h => {
+                    if (h.code === editingMasterCode) {
+                        h.name = name;
+                    }
+                });
+
+                // 4. 달력 일정(Schedules) DB 갱신
+                schedulesDB.forEach(s => {
+                    if (s.code === editingMasterCode) {
+                        s.name = name;
+                    }
+                });
+
+                showToast(`[${code}] 마스터 정보가 수정되어 전체 기록에 반영되었습니다.`, "success");
             } else {
                 if (masterDB.some(m => m.code === code)) {
                     showToast("이미 존재하는 품목 코드입니다.", "warning");
@@ -6156,13 +6175,14 @@
                 showToast(`[${code}] 신규 마스터가 등록되었습니다.`, "success");
             }
 
+            // 서버 저장 및 모든 화면 새로고침
             saveStateToStorage();
             closeMasterModal();
             renderMasterTable();
             renderInventoryTable();
             renderStockLedger();
+            if(typeof renderHistoryTable === 'function') renderHistoryTable();
         }
-
         function deleteMasterItem(code) {
             if (!hasPermission('MASTER_DELETE')) {
                 showToast("품목 마스터 삭제는 총괄 관리자(ADMIN) 전용입니다.", "warning");
