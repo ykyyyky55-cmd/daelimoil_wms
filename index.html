@@ -2830,15 +2830,41 @@
             }
         }
 
+        /* =========================================================
+           [수정] 캐시 무시 + 빈 시트 자동 동기화 기능이 추가된 로딩 함수
+           ========================================================= */
         async function loadStateFromStorage() {
             if (GAS_URL.startsWith("https://script.google.com")) {
                 try {
-                    showToast("구글 시트 서버에서 최신 데이터를 불러오는 중...", "info");
+                    showToast("구글 시트 서버 동기화 중...", "info");
                     
-                    const response = await fetch(GAS_URL);
-                    const data = await response.json();
+                    // 1. 브라우저 캐시(기억) 무시를 위해 URL 끝에 현재 시간 추가
+                    const urlWithCacheBuster = GAS_URL + (GAS_URL.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
                     
-                    if (data && Object.keys(data).length > 0) {
+                    const response = await fetch(urlWithCacheBuster, { redirect: 'follow' });
+                    const text = await response.text(); 
+                    
+                    // 2. 권한 오류 체크 (HTML 로그인 페이지가 반환된 경우)
+                    if (text.includes("<html")) {
+                        throw new Error("권한 오류: 구글 앱스 스크립트 배포 시 권한을 '모든 사용자'로 설정해주세요.");
+                    }
+
+                    // 3. JSON 데이터 변환
+                    let data = {};
+                    try {
+                        data = JSON.parse(text);
+                    } catch(e) {
+                        data = {};
+                    }
+                    
+                    // 4. 구글 시트가 완전히 비어있는 초기 상태인 경우 -> 내 PC 데이터를 시트에 덮어씀
+                    if (!data || Object.keys(data).length === 0) {
+                        showToast("시트가 비어있습니다. 내 기기의 데이터를 서버로 백업합니다.", "warning");
+                        loadFromLocalFallback(); // 내 PC 데이터 부르기
+                        saveStateToStorage();    // 구글 시트로 강제 전송
+                    } 
+                    // 5. 구글 시트에 데이터가 있는 경우 -> 정상적으로 불러오기
+                    else {
                         if (data.categories) categoriesDB = data.categories;
                         if (data.locations) locationsDB = data.locations;
                         if (data.workers) workersDB = data.workers;
@@ -2850,14 +2876,14 @@
                         if (data.globalWorker) currentGlobalWorker = data.globalWorker;
                         if (data.users) usersDB = data.users;
                         
-                        showToast("서버 실시간 동기화 완료!", "success");
+                        showToast("구글 시트 동기화 완료!", "success");
                     }
                 } catch (e) {
-                    console.warn("구글 시트 로딩 실패, 로컬 백업 데이터를 사용합니다:", e);
+                    console.error("구글 시트 로딩 실패:", e);
+                    showToast("서버 연결 실패. 오프라인 모드(로컬 데이터)로 작동합니다.", "error");
                     loadFromLocalFallback();
                 }
             } else {
-                // URL이 입력되지 않았을 경우 기존 방식 동작
                 loadFromLocalFallback();
             }
         }
