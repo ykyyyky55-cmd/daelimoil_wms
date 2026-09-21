@@ -47,48 +47,85 @@
             }
             .no-print { display: none !important; }
         }
-     /* --- 폼텍(Formtec) A4 대량 인쇄 전용 스타일 --- */
-        @page { margin: 0; size: A4 portrait; }
+    /* --- 폼텍(Formtec) A4 대량 인쇄 전용 스타일 --- */
+        @page { 
+            size: A4; 
+            margin: 0 !important; 
+        }
+        
         .formtec-page {
             width: 210mm;
             height: 297mm;
             box-sizing: border-box;
-            page-break-after: always;
             background: white;
             overflow: hidden;
+            page-break-after: always;
+            /* 여백 초기화 (프린터 기본 여백 무시) */
+            margin: 0;
+            padding: 0;
         }
-        .formtec-page:last-child { page-break-after: auto; }
-        .fmt-grid { display: grid; }
+        
+        .formtec-page:last-child { 
+            page-break-after: auto; 
+        }
+        
+        .fmt-grid { 
+            display: grid; 
+            box-sizing: border-box;
+        }
         
         /* 폼텍 3120 & 3114 (14칸: 99.1 x 38.1 mm) */
         .fmt-3120 { 
-            padding: 15.2mm 4.7mm; 
+            /* 폼텍 제조사 공식 여백: 위 15.2mm, 좌측 4.7mm */
+            padding-top: 15.2mm;
+            padding-left: 4.7mm;
+            padding-right: 4.7mm;
             grid-template-columns: repeat(2, 99.1mm); 
             grid-auto-rows: 38.1mm; 
-            column-gap: 2.4mm; row-gap: 0; 
+            column-gap: 2.4mm; 
+            row-gap: 0; 
         }
+        
         /* 폼텍 3118 (18칸: 63.5 x 46.6 mm) */
         .fmt-3118 { 
-            padding: 8.7mm 7.2mm; 
+            /* 폼텍 제조사 공식 여백: 위 8.7mm, 좌측 7.2mm */
+            padding-top: 8.7mm;
+            padding-left: 7.2mm;
+            padding-right: 7.2mm;
             grid-template-columns: repeat(3, 63.5mm); 
             grid-auto-rows: 46.6mm; 
-            column-gap: 2.5mm; row-gap: 0; 
+            column-gap: 2.5mm; 
+            row-gap: 0; 
         }
+        
         .fmt-cell { 
             box-sizing: border-box; 
             padding: 4mm; 
-            display: flex; align-items: center; justify-content: space-between; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
             overflow: hidden; 
         }
+        
         /* 인쇄 시 폼텍 모드와 일반 모드 분리 */
-        body.print-mode-formtec * { visibility: hidden; }
-        body.print-mode-formtec #formtec-print-area, 
-        body.print-mode-formtec #formtec-print-area * { visibility: visible; }
-        body.print-mode-formtec #formtec-print-area { 
-            position: absolute; left: 0; top: 0; 
-            width: 210mm !important; margin: 0 !important; padding: 0 !important; 
+        body.print-mode-formtec * { 
+            visibility: hidden; 
         }
-        body.print-mode-formtec .printable-area { display: none !important; }   
+        body.print-mode-formtec #formtec-print-area, 
+        body.print-mode-formtec #formtec-print-area * { 
+            visibility: visible; 
+        }
+        body.print-mode-formtec #formtec-print-area { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 210mm !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+        }
+        body.print-mode-formtec .printable-area { 
+            display: none !important; 
+        }  
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased">
