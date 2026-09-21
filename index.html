@@ -2787,6 +2787,9 @@
         /* =========================================================
            [수정 2] 구글 시트로 데이터를 실시간 저장하도록 함수 변경
            ========================================================= */
+       /* =========================================================
+           [최종 수정] 구글 시트로 데이터를 무조건 꽂아넣는 강제 저장 함수
+           ========================================================= */
         async function saveStateToStorage() {
             // 1. 만약을 위해 내 기기(로컬) 내부에도 백업용으로 동시 저장
             try {
@@ -2806,7 +2809,7 @@
             }
 
             // 2. 구글 시트로 보낼 전체 데이터 포장
-            const payload = {
+            const payloadData = {
                 categories: categoriesDB,
                 locations: locationsDB,
                 workers: workersDB,
@@ -2819,23 +2822,27 @@
                 users: usersDB
             };
 
-            // 3. 구글 시트로 강제 전송 (보안 정책 우회 적용)
+            // 데이터를 문자열로 완벽하게 변환 (에러 방지)
+            const jsonString = JSON.stringify(payloadData);
+
+            // 3. 구글 시트로 강제 전송
             if (GAS_URL.startsWith("https://script.google.com")) {
                 try {
+                    // ★ CORS 보안을 뚫기 위해 가장 단순한 fetch 방식으로 전송
                     fetch(GAS_URL, {
                         method: "POST",
-                        mode: "no-cors",  // ★ 이 부분이 핵심입니다! 브라우저 보안 차단을 우회합니다.
-                        headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify(payload)
-                    }).then(() => {
-                        console.log("구글 시트에 백그라운드 저장 요청 완료");
-                    }).catch(err => console.error("구글 시트 동기화 에러:", err));
+                        body: jsonString,
+                        // no-cors를 쓰지 않고 헤더 자체를 생략하여 단순 텍스트로 위장 전송
+                    }).then(response => {
+                        console.log("서버 전송 시도 완료");
+                    }).catch(err => {
+                        console.error("전송 에러 발생:", err);
+                    });
                 } catch (e) {
-                    console.error("Fetch 요청 에러:", e);
+                    console.error("Fetch 함수 자체 에러:", e);
                 }
             }
         }
-
         /* =========================================================
            [수정] 캐시 무시 + 빈 시트 자동 동기화 기능이 추가된 로딩 함수
            ========================================================= */
