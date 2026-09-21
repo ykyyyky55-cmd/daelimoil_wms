@@ -6993,82 +6993,101 @@
             if (btnCommit) btnCommit.disabled = staging.length === 0;
         }
 
+       // [수정된 함수] 엑셀/시트 대량 일괄 등록 확정 및 수불부 반영
         function commitBulkImport() {
-            if (parsedBulkStagingList.length === 0) return;
-            const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+            if (!parsedBulkStagingList || parsedBulkStagingList.length === 0) {
+                showToast("등록할 데이터가 없습니다.", "warning");
+                return;
+            }
 
-            parsedBulkStagingList.forEach(item => {
-                if (!categoriesDB.includes(item.cat)) categoriesDB.push(item.cat);
-                if (!locationsDB.includes(item.loc)) locationsDB.push(item.loc);
+            const nowTime = new Date().toTimeString().split(' ')[0].substring(0, 5);
+            const today = new Date().toISOString().split('T')[0];
+            const timestamp = `${today} ${nowTime}`;
+            
+            let addedCount = 0;
+            let updatedCount = 0;
 
+            parsedBulkStagingList.forEach((item, index) => {
+                // 1. 품목 마스터(기준정보) 갱신 또는 신규 추가
                 let master = masterDB.find(m => m.code === item.code);
                 if (master) {
-                    master.category = item.cat;
-                    master.name = item.name;
-                    master.supplier = item.sup;
-                    master.spec = item.spec;
-                    master.unit = item.unit;
-                    master.safety = item.safety;
+                    master.category = item.category || master.category;
+                    master.name = item.name || master.name;
+                    master.supplier = item.supplier || master.supplier;
+                    master.spec = item.spec || master.spec;
+                    master.unit = item.unit || master.unit;
+                    master.safety = item.safety ? parseInt(item.safety, 10) : master.safety;
+                    updatedCount++;
                 } else {
                     masterDB.unshift({
-                        category: item.cat,
+                        category: item.category || '부자재',
                         code: item.code,
-                        name: item.name,
-                        supplier: item.sup,
-                        spec: item.spec,
-                        unit: item.unit,
-                        safety: item.safety
+                        name: item.name || '미지정 품목',
+                        supplier: item.supplier || '',
+                        spec: item.spec || '',
+                        unit: item.unit || 'EA',
+                        safety: item.safety ? parseInt(item.safety, 10) : 20
                     });
+                    addedCount++;
                 }
 
-                if (item.qty > 0) {
-                    let inv = inventoryDB.find(i => i.code === item.code && i.location === item.loc);
+                // 2. 창고 현재고 갱신 및 수불부(History) 이력 생성
+                let qty = parseInt(item.quantity, 10) || 0;
+                let loc = item.location || locationsDB[0] || '기본거점';
+                
+                if (qty > 0) {
+                    let inv = inventoryDB.find(i => i.code === item.code && i.location === loc);
                     if (inv) {
-                        inv.quantity += item.qty;
-                        inv.lastUpdated = now;
+                        inv.quantity += qty; // 기존 재고에 일괄 등록 수량을 누적 합산
+                        inv.lastUpdated = timestamp;
                     } else {
                         inventoryDB.unshift({
-                            category: item.cat,
+                            category: item.category || '부자재',
                             code: item.code,
-                            name: item.name,
-                            supplier: item.sup,
-                            spec: item.spec,
-                            location: item.loc,
-                            quantity: item.qty,
-                            unit: item.unit,
+                            name: item.name || '미지정 품목',
+                            supplier: item.supplier || '',
+                            spec: item.spec || '',
+                            location: loc,
+                            quantity: qty,
+                            unit: item.unit || 'EA',
                             status: "정상 보관",
-                            lastUpdated: now
+                            lastUpdated: timestamp
                         });
                     }
 
+                    // 🌟 핵심: 자재수불부 및 작업이력에 '입고(IN)' 기록 추가
                     historyDB.unshift({
-                        id: Date.now() + Math.random(),
-                        timestamp: now,
-                        type: "IN",
+                        id: Date.now() + index, // 고유 ID 부여
+                        timestamp: timestamp,
+                        type: "IN", 
                         code: item.code,
-                        name: item.name,
-                        qty: item.qty,
+                        name: item.name || '미지정 품목',
+                        worker: currentGlobalWorker || "관리자",
+                        qty: qty,
                         fromLoc: "-",
-                        toLoc: item.loc,
-                        reason: "엑셀/시트 대량 일괄 등록 입고"
+                        toLoc: loc,
+                        reason: "엑셀/시트 대량 일괄 등록 (초기 입고)"
                     });
                 }
             });
 
+            // 3. 서버/로컬 스토리지에 데이터 저장
             saveStateToStorage();
-            populateCategorySelects();
-            populateLocationSelects();
-            populateLedgerItemSelect();
-            renderMasterTable();
-            renderInventoryTable();
-            renderStockLedger();
-            renderHistoryTable();
-
+            
+            // 4. 모달창 닫기 및 임시 데이터 초기화
             closeBulkImportModal();
-            showToast(`${parsedBulkStagingList.length}건의 품목이 성공적으로 반영되었습니다.`, "success");
-            parsedBulkStagingList = [];
-        }
+            parsedBulkStagingList = []; 
+            document.getElementById('bulk-preview-container').classList.add('hidden');
+            
+            // 5. 모든 화면(UI) 최신 상태로 새로고침
+            if (typeof renderMasterTable === 'function') renderMasterTable();
+            if (typeof renderInventoryTable === 'function') renderInventoryTable();
+            if (typeof renderStockLedger === 'function') renderStockLedger();
+            if (typeof renderHistoryTable === 'function') renderHistoryTable();
+            if (typeof renderHomeDashboard === 'function') renderHomeDashboard();
 
+            showToast(`총 ${addedCount}건 신규, ${updatedCount}건 갱신 및 수불부 입고 반영이 완료되었습니다.`, "success");
+        }
         function downloadExcelTemplate() {
             if (typeof XLSX === 'undefined') return;
             const templateData = [
