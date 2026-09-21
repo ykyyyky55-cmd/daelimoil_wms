@@ -5267,23 +5267,22 @@
 
             try {
                 if (!html5QrScanner) {
+                    // QR 코드와 바코드(CODE_128 등)에 집중하도록 엔진 설정
                     html5QrScanner = new Html5Qrcode("qr-reader-view");
                 }
 
-                // 1. 디바이스에 연결된 모든 카메라 목록 가져오기
                 const cameras = await Html5Qrcode.getCameras();
                 const camSelect = document.getElementById('camera-select');
                 
-                let selectedCamId = { facingMode: "environment" }; // 기본값: 후면 카메라 강제 지정
+                let selectedCamId = { facingMode: "environment" }; // 기본 후면 카메라
                 
                 if (cameras && cameras.length > 0) {
-                    // 카메라 목록을 셀렉트 박스에 추가
                     camSelect.innerHTML = cameras.map((c, idx) => {
                         let label = c.label || `카메라 ${idx + 1}`;
                         return `<option value="${c.id}">${label}</option>`;
                     }).join('');
 
-                    // 2. 후면 카메라(back, rear, environment)를 이름으로 찾아내기
+                    // 후면 카메라 자동 탐색
                     const backCamera = cameras.find(c => 
                         c.label.toLowerCase().includes('back') || 
                         c.label.toLowerCase().includes('rear') || 
@@ -5292,25 +5291,44 @@
                         c.label.toLowerCase().includes('뒷면')
                     );
 
-                    // 후면 카메라를 찾았다면 해당 카메라 ID로 설정하고 셀렉트 박스도 맞춰줌
                     if (backCamera) {
                         selectedCamId = backCamera.id;
                         camSelect.value = backCamera.id;
                     } else {
-                        // 만약 이름으로 못 찾았다면, 사용자가 드롭다운에서 직접 고른 값이나 기본값 사용
                         selectedCamId = camSelect.value || { facingMode: "environment" };
                     }
                 }
 
-                // 3. 찾은 후면 카메라로 스캐너 실행
+                // 🌟 [핵심] QR 스캔 인식률을 대폭 높이는 최적화 설정
+                const scannerConfig = { 
+                    fps: 15, // 초당 스캔 프레임 증가 (기존 10 -> 15로 반응속도 향상)
+                    qrbox: function(viewfinderWidth, viewfinderHeight) {
+                        // 스마트폰 화면 크기에 비례하여 스캔 박스를 꽉 차게 동적 확대
+                        let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                        let qrboxSize = Math.floor(minEdgeSize * 0.75); // 화면의 75% 크기
+                        qrboxSize = Math.min(qrboxSize, 300); // 단, 최대 300px 제한
+                        return { width: qrboxSize, height: qrboxSize };
+                    },
+                    aspectRatio: 1.0, 
+                    disableFlip: false,
+                    videoConstraints: {
+                        facingMode: "environment",
+                        width: { ideal: 1280 }, // 고해상도(HD) 렌즈 요청 (화질 개선)
+                        height: { ideal: 720 },
+                        advanced: [{ focusMode: "continuous" }] // 오토포커스(자동초점) 강제 활성화
+                    }
+                };
+
                 await html5QrScanner.start(
                     selectedCamId,
-                    { fps: 10, qrbox: { width: 220, height: 220 } },
+                    scannerConfig,
                     (decodedText) => {
                         processScannedContent(decodedText);
                         stopCamera();
                     },
-                    () => {}
+                    (errorMessage) => {
+                        // 스캔 중 발생하는 자잘한 노이즈 에러는 무시 (콘솔창 도배 방지)
+                    }
                 );
 
                 isCameraActive = true;
