@@ -2779,9 +2779,12 @@
         let mrpTargetStockDays = 30;
         let mrpCalculatedRows = [];
 
-        const GAS_URL = "https://wmsdb-95688-default-rtdb.firebaseio.com/wms_data.json";
+       /* =========================================================
+           [최종] Firebase Realtime Database 연동 코드
+           ========================================================= */
+        const FIREBASE_URL = "https://wmsdb-95688-default-rtdb.firebaseio.com/wms_data.json";
 
-       async function saveStateToStorage() {
+        async function saveStateToStorage() {
             // 1. 내 기기(로컬) 내부에도 백업용으로 동시 저장
             try {
                 localStorage.setItem('wms_categories', JSON.stringify(categoriesDB));
@@ -2878,86 +2881,7 @@
                 }
             } catch (e) {}
         }
-        /* =========================================================
-           [수정] 캐시 무시 + 빈 시트 자동 동기화 기능이 추가된 로딩 함수
-           ========================================================= */
-        async function loadStateFromStorage() {
-            if (GAS_URL.startsWith("https://script.google.com")) {
-                try {
-                    showToast("구글 시트 서버 동기화 중...", "info");
-                    
-                    // 1. 브라우저 캐시(기억) 무시를 위해 URL 끝에 현재 시간 추가
-                    const urlWithCacheBuster = GAS_URL + (GAS_URL.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
-                    
-                    const response = await fetch(urlWithCacheBuster, { redirect: 'follow' });
-                    const text = await response.text(); 
-                    
-                    // 2. 권한 오류 체크 (HTML 로그인 페이지가 반환된 경우)
-                    if (text.includes("<html")) {
-                        throw new Error("권한 오류: 구글 앱스 스크립트 배포 시 권한을 '모든 사용자'로 설정해주세요.");
-                    }
-
-                    // 3. JSON 데이터 변환
-                    let data = {};
-                    try {
-                        data = JSON.parse(text);
-                    } catch(e) {
-                        data = {};
-                    }
-                    
-                    // 4. 구글 시트가 완전히 비어있는 초기 상태인 경우 -> 내 PC 데이터를 시트에 덮어씀
-                    if (!data || Object.keys(data).length === 0) {
-                        showToast("시트가 비어있습니다. 내 기기의 데이터를 서버로 백업합니다.", "warning");
-                        loadFromLocalFallback(); // 내 PC 데이터 부르기
-                        saveStateToStorage();    // 구글 시트로 강제 전송
-                    } 
-                    // 5. 구글 시트에 데이터가 있는 경우 -> 정상적으로 불러오기
-                    else {
-                        if (data.categories) categoriesDB = data.categories;
-                        if (data.locations) locationsDB = data.locations;
-                        if (data.workers) workersDB = data.workers;
-                        if (data.master) masterDB = data.master;
-                        if (data.inventory) inventoryDB = data.inventory;
-                        if (data.history) historyDB = data.history;
-                        if (data.schedules) schedulesDB = data.schedules;
-                        if (data.homeWidgets) homeWidgetsState = data.homeWidgets;
-                        if (data.globalWorker) currentGlobalWorker = data.globalWorker;
-                        if (data.users) usersDB = data.users;
-                        
-                        showToast("구글 시트 동기화 완료!", "success");
-                    }
-                } catch (e) {
-                    console.error("구글 시트 로딩 실패:", e);
-                    showToast("서버 연결 실패. 오프라인 모드(로컬 데이터)로 작동합니다.", "error");
-                    loadFromLocalFallback();
-                }
-            } else {
-                loadFromLocalFallback();
-            }
-        }
-
-        // 기존의 로컬 스토리지 불러오기 방식 (오프라인 대비용)
-        function loadFromLocalFallback() {
-            try {
-                const c = localStorage.getItem('wms_categories'); if (c) categoriesDB = JSON.parse(c);
-                const l = localStorage.getItem('wms_locations'); if (l) locationsDB = JSON.parse(l);
-                const wkr = localStorage.getItem('wms_workers'); if (wkr) workersDB = JSON.parse(wkr);
-                const m = localStorage.getItem('wms_master'); if (m) masterDB = JSON.parse(m);
-                const i = localStorage.getItem('wms_inventory'); if (i) inventoryDB = JSON.parse(i);
-                const h = localStorage.getItem('wms_history'); if (h) historyDB = JSON.parse(h);
-                const s = localStorage.getItem('wms_schedules'); if (s) schedulesDB = JSON.parse(s);
-                const w = localStorage.getItem('wms_home_widgets'); if (w) homeWidgetsState = Object.assign(homeWidgetsState, JSON.parse(w));
-                const gw = localStorage.getItem('wms_global_worker'); if (gw) currentGlobalWorker = gw;
-                const u = localStorage.getItem('wms_users'); if (u) usersDB = JSON.parse(u);
-                const curId = localStorage.getItem('wms_current_user_id');
-                if (curId) {
-                    const matchUser = usersDB.find(usr => usr.username === curId);
-                    if (matchUser) currentUser = matchUser;
-                }
-            } catch (e) {
-                console.warn("Storage load error:", e);
-            }
-        }
+       
          /* =========================================================
            [수정 4] 앱이 처음 실행될 때 데이터 불러오기 자동 시작
            ========================================================= */
