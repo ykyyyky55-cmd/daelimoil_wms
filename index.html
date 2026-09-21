@@ -95,143 +95,58 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-                <!-- 새롭게 생성된 아이콘 이미지 적용 -->
                 <div class="w-10 h-10 rounded-xl shadow-md border border-slate-200 overflow-hidden bg-white">
                     <img src="watermarked_img_1706856752755962638.png" alt="DAELIMOIL Logo" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <!-- 앱 이름 변경 -->
                         <h1 class="text-base font-extrabold tracking-tight text-slate-900">DAELIMOIL SMART WMS</h1>
                         <span class="px-2 py-0.5 text-[10px] font-black bg-orange-100 text-orange-800 rounded-full border border-orange-200">PRO</span>
                     </div>
                     <p class="text-xs text-slate-500 hidden sm:block">대림오일 스마트 자재·재고·수불 관리 시스템</p>
                 </div>
             </div>
+
             <!-- 상단 툴바 액션 버튼 그룹 -->
             <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
-                <!-- 작업자 빠른 설정 및 선택 -->
                 <div class="flex items-center bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 shadow-xs text-xs">
                     <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-600 mr-1.5"></i>
                     <span class="text-[11px] font-bold text-slate-500 hidden sm:inline mr-1">현재 작업자:</span>
-                    <select id="global-worker-select" onchange="changeGlobalWorker(this.value)" 
-                        class="bg-transparent border-none text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
-                    </select>
+                    <select id="global-worker-select" onchange="changeGlobalWorker(this.value)" class="bg-transparent border-none text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"></select>
                 </div>
-                <!-- 로그인 계정 프로필 & 권한 관리 뱃지 -->
                 <div id="auth-profile-badge" class="flex items-center gap-1.5 bg-slate-900 text-white rounded-lg px-2.5 py-1 text-xs shadow-xs">
                     <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
                     <span id="auth-user-name" class="font-bold">관리자</span>
                     <span id="auth-user-role-badge" class="px-1.5 py-0.2 rounded text-[10px] font-black bg-blue-600 text-white">ADMIN</span>
-                    <button type="button" onclick="logoutUser()" class="ml-1 p-0.5 text-slate-400 hover:text-rose-400 transition" title="로그아웃">
-                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-                    </button>
+                    <button type="button" onclick="logoutUser()" class="ml-1 p-0.5 text-slate-400 hover:text-rose-400 transition" title="로그아웃"><i data-lucide="log-out" class="w-3.5 h-3.5"></i></button>
                 </div>
-                <button type="button" id="btn-user-mgmt" onclick="openUserMgmtModal()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-indigo-600/20">
-                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
-                    <span>권한/계정 관리</span>
-                </button>
-                <button type="button" id="btn-auth-login" onclick="openAuthModal('LOGIN')" class="hidden px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-                    <span>로그인 / 등록</span>
-                </button>
-                <button type="button" onclick="switchTab('audit')" class="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-teal-600/20">
-                    <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i>
-                    <span>재고실사 / 실재고 등록</span>
-                </button>
-                <button type="button" onclick="openWorkerManagerModal()" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-blue-600/20">
-                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-                    <span>작업자 등록/관리</span>
-                </button>
-                <button type="button" onclick="openWidgetManagerModal()" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
-                    <span>홈 작업창 설정</span>
-                </button>
-                <button type="button" onclick="openMobileAccessModal()" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-                    <span>모바일 접속 QR</span>
-                </button>
-                <button type="button" onclick="openBulkImportModal()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-emerald-600/20">
-                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-                    <span>엑셀/시트 등록</span>
-                </button>
-                <button type="button" onclick="openTransferSlipModal()" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-amber-500/20">
-                   <i data-lucide="file-signature" class="w-3.5 h-3.5"></i>
-                   <span>요청서/전표 발행</span>
-                </button>
-                <button type="button" onclick="openCategoryManagerModal()" class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="tag" class="w-3.5 h-3.5"></i>
-                    <span class="hidden md:inline">분류 관리</span>
-                </button>
-                <button type="button" onclick="openLocationManagerModal()" class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                    <span class="hidden md:inline">거점 관리</span>
-                </button>
-                <button type="button" onclick="openBackupModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="archive" class="w-3.5 h-3.5"></i>
-                    <span>백업/복원</span>
-                </button>
+                <button type="button" id="btn-user-mgmt" onclick="openUserMgmtModal()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="users" class="w-3.5 h-3.5"></i><span>권한/계정 관리</span></button>
+                <button type="button" id="btn-auth-login" onclick="openAuthModal('LOGIN')" class="hidden px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="log-in" class="w-3.5 h-3.5"></i><span>로그인 / 등록</span></button>
+                <button type="button" onclick="switchTab('audit')" class="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i><span>재고실사 / 등록</span></button>
+                <button type="button" onclick="openWorkerManagerModal()" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i><span>작업자 관리</span></button>
+                <button type="button" onclick="openWidgetManagerModal()" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i><span>홈 위젯 설정</span></button>
+                <button type="button" onclick="openMobileAccessModal()" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i><span>모바일 접속</span></button>
+                <button type="button" onclick="openBulkImportModal()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i><span>엑셀 등록</span></button>
+                <button type="button" onclick="openTransferSlipModal()" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="file-signature" class="w-3.5 h-3.5"></i><span>요청서/전표 발행</span></button>
+                <button type="button" onclick="openCategoryManagerModal()" class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="tag" class="w-3.5 h-3.5"></i><span class="hidden md:inline">분류 관리</span></button>
+                <button type="button" onclick="openLocationManagerModal()" class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i><span class="hidden md:inline">거점 관리</span></button>
+                <button type="button" onclick="openBackupModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"><i data-lucide="archive" class="w-3.5 h-3.5"></i><span>백업/복원</span></button>
             </div>
         </div>
 
         <!-- 탭 메뉴 네비게이션 -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 flex overflow-x-auto gap-2 sm:gap-6 border-t border-slate-100 scrollbar-none text-xs sm:text-sm">
-            <button type="button" onclick="switchTab('home')" id="tab-btn-home" class="tab-btn active py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="home" class="w-4 h-4"></i>
-                <span>홈 (대시보드)</span>
-            </button>
-            <button type="button" onclick="switchTab('scan')" id="tab-btn-scan" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="scan-line" class="w-4 h-4"></i>
-                <span>현장 스캔 / 작업</span>
-            </button>
-            <button type="button" onclick="switchTab('label')" id="tab-btn-label" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="qr-code" class="w-4 h-4"></i>
-                <span>QR 생성 / 라벨발행</span>
-            </button>
-            <button type="button" onclick="switchTab('master')" id="tab-btn-master" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="layout-grid" class="w-4 h-4"></i>
-                <span>품목 마스터 관리</span>
-            </button>
-            <button type="button" onclick="switchTab('inventory')" id="tab-btn-inventory" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="database" class="w-4 h-4"></i>
-                <span>창고 재고 현황</span>
-            </button>
-            <button type="button" onclick="switchTab('audit')" id="tab-btn-audit" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="clipboard-check" class="w-4 h-4 text-teal-600"></i>
-                <span class="flex items-center gap-1">
-                    <span class="font-bold text-teal-700">재고실사 / 조사</span>
-                    <span id="nav-audit-diff-badge" class="hidden px-1.5 py-0.2 text-[9px] font-extrabold bg-rose-100 text-rose-700 rounded-full">오차</span>
-                </span>
-            </button>
-            <button type="button" onclick="switchTab('ledger')" id="tab-btn-ledger" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="book-open-check" class="w-4 h-4"></i>
-                <span>자재 수불부</span>
-            </button>
-            <button type="button" onclick="switchTab('calendar')" id="tab-btn-calendar" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i>
-                <span class="flex items-center gap-1">
-                    <span>수불·입출고 캘린더</span>
-                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-indigo-100 text-indigo-700 rounded-full">구글 연동</span>
-                </span>
-            </button>
-            <button type="button" onclick="switchTab('analytics')" id="tab-btn-analytics" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>
-                <span class="flex items-center gap-1">
-                    <span class="font-bold text-emerald-700">월간 실적 현황판</span>
-                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-emerald-100 text-emerald-800 rounded-full">그래프</span>
-                </span>
-            </button>
-            <button type="button" onclick="switchTab('planning')" id="tab-btn-planning" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="calculator" class="w-4 h-4 text-violet-600"></i>
-                <span class="flex items-center gap-1">
-                    <span class="font-black text-violet-700">발주·생산·안전재고 검토</span>
-                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-violet-100 text-violet-800 rounded-full">MRP</span>
-                </span>
-            </button>
-            <button type="button" onclick="switchTab('history')" id="tab-btn-history" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition">
-                <i data-lucide="history" class="w-4 h-4"></i>
-                <span>작업 이력 (Audit Log)</span>
-            </button>
+            <button type="button" onclick="switchTab('home')" id="tab-btn-home" class="tab-btn active py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="home" class="w-4 h-4"></i><span>홈 (대시보드)</span></button>
+            <button type="button" onclick="switchTab('scan')" id="tab-btn-scan" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="scan-line" class="w-4 h-4"></i><span>현장 스캔 / 작업</span></button>
+            <button type="button" onclick="switchTab('label')" id="tab-btn-label" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="qr-code" class="w-4 h-4"></i><span>QR 생성 / 라벨발행</span></button>
+            <button type="button" onclick="switchTab('master')" id="tab-btn-master" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="layout-grid" class="w-4 h-4"></i><span>품목 마스터 관리</span></button>
+            <button type="button" onclick="switchTab('inventory')" id="tab-btn-inventory" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="database" class="w-4 h-4"></i><span>창고 재고 현황</span></button>
+            <button type="button" onclick="switchTab('audit')" id="tab-btn-audit" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="clipboard-check" class="w-4 h-4 text-teal-600"></i><span class="flex items-center gap-1"><span class="font-bold text-teal-700">재고실사 / 조사</span><span id="nav-audit-diff-badge" class="hidden px-1.5 py-0.2 text-[9px] font-extrabold bg-rose-100 text-rose-700 rounded-full">오차</span></span></button>
+            <button type="button" onclick="switchTab('ledger')" id="tab-btn-ledger" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="book-open-check" class="w-4 h-4"></i><span>자재 수불부</span></button>
+            <button type="button" onclick="switchTab('calendar')" id="tab-btn-calendar" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i><span class="flex items-center gap-1"><span>수불·입출고 캘린더</span></span></button>
+            <button type="button" onclick="switchTab('analytics')" id="tab-btn-analytics" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i><span class="flex items-center gap-1"><span class="font-bold text-emerald-700">월간 실적 현황판</span></span></button>
+            <button type="button" onclick="switchTab('planning')" id="tab-btn-planning" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="calculator" class="w-4 h-4 text-violet-600"></i><span class="flex items-center gap-1"><span class="font-black text-violet-700">발주·생산 검토</span></span></button>
+            <button type="button" onclick="switchTab('history')" id="tab-btn-history" class="tab-btn py-3 px-2 border-b-2 border-transparent text-slate-600 hover:text-blue-600 flex items-center gap-2 whitespace-nowrap transition"><i data-lucide="history" class="w-4 h-4"></i><span>작업 이력 (Audit Log)</span></button>
         </div>
     </header>
 
