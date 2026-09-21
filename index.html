@@ -47,6 +47,48 @@
             }
             .no-print { display: none !important; }
         }
+     /* --- 폼텍(Formtec) A4 대량 인쇄 전용 스타일 --- */
+        @page { margin: 0; size: A4 portrait; }
+        .formtec-page {
+            width: 210mm;
+            height: 297mm;
+            box-sizing: border-box;
+            page-break-after: always;
+            background: white;
+            overflow: hidden;
+        }
+        .formtec-page:last-child { page-break-after: auto; }
+        .fmt-grid { display: grid; }
+        
+        /* 폼텍 3120 & 3114 (14칸: 99.1 x 38.1 mm) */
+        .fmt-3120 { 
+            padding: 15.2mm 4.7mm; 
+            grid-template-columns: repeat(2, 99.1mm); 
+            grid-auto-rows: 38.1mm; 
+            column-gap: 2.4mm; row-gap: 0; 
+        }
+        /* 폼텍 3118 (18칸: 63.5 x 46.6 mm) */
+        .fmt-3118 { 
+            padding: 8.7mm 7.2mm; 
+            grid-template-columns: repeat(3, 63.5mm); 
+            grid-auto-rows: 46.6mm; 
+            column-gap: 2.5mm; row-gap: 0; 
+        }
+        .fmt-cell { 
+            box-sizing: border-box; 
+            padding: 4mm; 
+            display: flex; align-items: center; justify-content: space-between; 
+            overflow: hidden; 
+        }
+        /* 인쇄 시 폼텍 모드와 일반 모드 분리 */
+        body.print-mode-formtec * { visibility: hidden; }
+        body.print-mode-formtec #formtec-print-area, 
+        body.print-mode-formtec #formtec-print-area * { visibility: visible; }
+        body.print-mode-formtec #formtec-print-area { 
+            position: absolute; left: 0; top: 0; 
+            width: 210mm !important; margin: 0 !important; padding: 0 !important; 
+        }
+        body.print-mode-formtec .printable-area { display: none !important; }   
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased">
@@ -839,7 +881,7 @@
                                         <span id="lbl-qty" class="font-black text-slate-900">100 EA</span>
                                     </div>
                                 </div>
-
+                                
                                 <div class="col-span-5 flex flex-col items-center justify-center p-1 bg-slate-50 border border-slate-200 rounded-lg">
                                     <canvas id="label-qr-canvas" class="w-[120px] h-[120px] max-w-full"></canvas>
                                     <div id="label-qr-fallback" class="hidden w-[120px] h-[120px]"></div>
@@ -848,6 +890,37 @@
                             </div>
                         </div>
                     </div>
+                   <!-- 폼텍 대량 인쇄 설정 패널 -->
+                    <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm mt-4 w-full">
+                        <div class="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+                            <i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>
+                            <span class="text-xs font-bold text-slate-700">A4 폼텍(Formtec) 대량 인쇄</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs mb-4">
+                            <div class="col-span-2">
+                                <label class="block font-semibold text-slate-700 mb-1">라벨지 규격 (모델명)</label>
+                                <select id="fmt-model" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-bold text-blue-900 bg-blue-50">
+                                    <option value="3120">3120 / 3114 (14라벨, 99.1 x 38.1mm)</option>
+                                    <option value="3118">3118 (18라벨, 63.5 x 46.6mm)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">인쇄할 개수</label>
+                                <input type="number" id="fmt-count" value="14" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-amber-700 mb-1">시작 칸 (사용하던 용지)</label>
+                                <input type="number" id="fmt-start" value="1" min="1" max="18" title="예: 3번째 칸부터 인쇄하려면 3 입력" class="w-full px-3 py-2 border border-amber-300 bg-amber-50 rounded-lg">
+                            </div>
+                        </div>
+                        <button type="button" onclick="printFormtecLabel()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                            <span>선택한 폼텍 양식으로 인쇄</span>
+                        </button>
+                    </div>
+
+                    <!-- 실제 인쇄 시에만 나타나는 폼텍 캔버스 (화면엔 안보임) -->
+                    <div id="formtec-print-area" class="hidden"></div> 
                 </div>
             </div>
         </section>
