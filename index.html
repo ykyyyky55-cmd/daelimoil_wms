@@ -116,8 +116,8 @@
                     <span>엑셀/시트 등록</span>
                 </button>
                 <button type="button" onclick="openTransferSlipModal()" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm shadow-amber-500/20">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>이동전표</span>
+                   <i data-lucide="file-signature" class="w-3.5 h-3.5"></i>
+                   <span>요청서/전표 발행</span>
                 </button>
                 <button type="button" onclick="openCategoryManagerModal()" class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
                     <i data-lucide="tag" class="w-3.5 h-3.5"></i>
@@ -1856,108 +1856,7 @@
         </div>
     </div>
 
-    <!-- 모달: 원부자재 이동전표 서식 -->
-    <div id="transfer-slip-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6">
-            <div class="p-4 bg-amber-500 text-white flex items-center justify-between no-print">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="file-text" class="w-5 h-5"></i>
-                    <h4 class="font-bold text-sm">원부자재 이동전표 (Material Transfer Slip)</h4>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="window.print()" class="px-2.5 py-1 bg-white text-amber-700 hover:bg-amber-50 rounded-lg text-xs font-bold transition flex items-center gap-1">
-                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                        <span>A4 서식 인쇄</span>
-                    </button>
-                    <button type="button" onclick="closeTransferSlipModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-                </div>
-            </div>
-
-            <div id="printable-transfer-slip" class="printable-area p-6 sm:p-8 bg-white text-slate-900 space-y-6 text-xs">
-                <div class="flex flex-wrap items-start justify-between gap-4 border-b-2 border-slate-900 pb-4">
-                    <div>
-                        <h2 class="text-2xl font-black tracking-tight text-slate-900">원 부 자 재 이 동 전 표</h2>
-                        <span class="text-xs font-semibold text-slate-500">MATERIAL TRANSFER SLIP</span>
-                        <div class="mt-2 text-[11px] space-y-0.5">
-                            <div><strong>전표번호:</strong> <span id="slip-doc-no" class="font-mono font-bold">TR-20260920-001</span></div>
-                            <div><strong>발행일자:</strong> <span id="slip-doc-date">2026-09-20</span></div>
-                        </div>
-                    </div>
-
-                    <div class="flex border border-slate-900 text-center text-[10px]">
-                        <div class="w-6 bg-slate-100 flex items-center justify-center font-bold border-r border-slate-900">출고</div>
-                        <div class="w-16 border-r border-slate-900">
-                            <div class="py-0.5 border-b border-slate-900 font-bold">담당</div>
-                            <div class="h-10"></div>
-                        </div>
-                        <div class="w-16 border-r border-slate-900">
-                            <div class="py-0.5 border-b border-slate-900 font-bold">승인</div>
-                            <div class="h-10"></div>
-                        </div>
-                        <div class="w-6 bg-slate-100 flex items-center justify-center font-bold border-r border-slate-900">인수</div>
-                        <div class="w-16 border-r border-slate-900">
-                            <div class="py-0.5 border-b border-slate-900 font-bold">담당</div>
-                            <div class="h-10"></div>
-                        </div>
-                        <div class="w-16">
-                            <div class="py-0.5 border-b border-slate-900 font-bold">확인</div>
-                            <div class="h-10"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-                    <div>
-                        <span class="text-slate-500 font-bold">출고 거점 (출발지):</span>
-                        <span id="slip-from-loc" class="font-bold text-slate-900 ml-1">김포공장 A동</span>
-                    </div>
-                    <div>
-                        <span class="text-slate-500 font-bold">입고 거점 (도착지):</span>
-                        <span id="slip-to-loc" class="font-bold text-blue-700 ml-1">김포2공장 B동</span>
-                    </div>
-                    <div>
-                        <span class="text-slate-500 font-bold">운송 방법 / 목적:</span>
-                        <span id="slip-transport-mode" class="font-medium text-slate-800 ml-1">사내 셔틀 운송 / 생산 투입</span>
-                    </div>
-                    <div>
-                        <span class="text-slate-500 font-bold">작업 담당자:</span>
-                        <span id="slip-worker-name" class="font-medium text-slate-800 ml-1">관리자 (WMS-ADMIN)</span>
-                    </div>
-                </div>
-
-                <div class="border border-slate-900 rounded-lg overflow-hidden">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100 border-b border-slate-900 font-bold text-slate-800">
-                            <tr>
-                                <th class="py-2 px-3">No</th>
-                                <th class="py-2 px-3">품목코드</th>
-                                <th class="py-2 px-3">품목명</th>
-                                <th class="py-2 px-3">규격 / 사양</th>
-                                <th class="py-2 px-3">제조원</th>
-                                <th class="py-2 px-3">단위</th>
-                                <th class="py-2 px-3 text-right">이동 수량</th>
-                            </tr>
-                        </thead>
-                        <tbody id="slip-items-tbody" class="divide-y divide-slate-200"></tbody>
-                        <tfoot class="bg-slate-50 border-t border-slate-900 font-bold">
-                            <tr>
-                                <td colspan="6" class="py-2 px-3 text-right">합계 이동 수량:</td>
-                                <td id="slip-total-qty" class="py-2 px-3 text-right font-black text-blue-700">0 EA</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                <div class="pt-4 border-t border-slate-200 text-slate-600 text-center space-y-3">
-                    <p class="text-xs">상기 원부자재를 이상 없이 정히 영수(인수)하였음을 확인합니다.</p>
-                    <div class="flex justify-around items-center pt-2 text-xs font-bold text-slate-900">
-                        <span>출고자: _________________ (인)</span>
-                        <span>인수자: _________________ (인)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="transfer-slip-modal"
 
     <!-- 모달: 대량 일괄 등록 -->
     <div id="bulk-import-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -5613,21 +5512,28 @@
             showToast(`[${currentActiveScannedItem.name}] 작업이 확정되었습니다. (작업자: ${worker})`, "success");
         }
 
+        // [수정] 모달 열기 함수
         function openTransferSlipModal() {
             const today = new Date().toISOString().split('T')[0];
-            const docNo = `TR-${today.replace(/-/g, '')}-001`;
+            const docNo = `-${today.replace(/-/g, '')}-001`;
+
+            // 셀렉트 박스를 기본값(이동전표)으로 돌리고 UI 업데이트 함수 호출
+            const typeSelect = document.getElementById('doc-type-select');
+            if(typeSelect) typeSelect.value = "TRANSFER_SLIP";
+            updateDocumentUI();
 
             document.getElementById('slip-doc-no').innerText = docNo;
             document.getElementById('slip-doc-date').innerText = today;
             document.getElementById('slip-from-loc').innerText = locationsDB[0] || '김포공장 A동';
             document.getElementById('slip-to-loc').innerText = locationsDB[1] || '김포2공장 B동';
             const workerEl = document.getElementById('slip-worker-name');
-            if (workerEl) workerEl.innerText = currentGlobalWorker || '관리자 (WMS-ADMIN)';
+            if (workerEl) workerEl.innerText = currentGlobalWorker || '관리자';
 
             const tbody = document.getElementById('slip-items-tbody');
             const totalEl = document.getElementById('slip-total-qty');
 
-            const moveHistory = historyDB.filter(h => h.type === 'MOVE');
+            // 최근 이동(MOVE) 이력을 불러와 기본 표시에 사용 (필요시 사용자가 수정할 수 있는 확장성 고려)
+            const moveHistory = historyDB.filter(h => h.type === 'MOVE' || h.type === 'OUT' || h.type === 'USE');
             if (moveHistory.length > 0) {
                 let total = 0;
                 tbody.innerHTML = moveHistory.slice(0, 5).map((h, idx) => {
@@ -5645,27 +5551,93 @@
                         </tr>
                     `;
                 }).join('');
-                totalEl.innerText = `${total} EA`;
+                totalEl.innerText = `${total.toLocaleString()} EA`;
             } else {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-400">최근 이동 이력이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-400">최근 입출고/이동 이력이 없습니다.</td></tr>`;
                 totalEl.innerText = `0 EA`;
             }
 
             document.getElementById('transfer-slip-modal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
         }
 
         function closeTransferSlipModal() {
             document.getElementById('transfer-slip-modal')?.classList.add('hidden');
         }
+// [신규] 문서 종류 변경 시 UI(제목, 결재란, 안내문구 등)를 바꿔주는 함수
+        function updateDocumentUI() {
+            const type = document.getElementById('doc-type-select').value;
+            const mainTitle = document.getElementById('doc-main-title');
+            const subTitle = document.getElementById('doc-sub-title');
+            const prefixNo = document.getElementById('doc-prefix-no');
+            const signArea = document.getElementById('doc-sign-area');
+            const footerMsg = document.getElementById('doc-footer-msg');
+            const lblFrom = document.getElementById('lbl-from-loc');
+            const lblTo = document.getElementById('lbl-to-loc');
+            const group1 = document.getElementById('sign-group-1');
+            const group2 = document.getElementById('sign-group-2');
 
+            if (type === 'TRANSFER_SLIP') {
+                mainTitle.innerText = "원 부 자 재 이 동 전 표";
+                subTitle.innerText = "MATERIAL TRANSFER SLIP";
+                prefixNo.innerText = "TR";
+                lblFrom.innerText = "출고 거점 (출발지):";
+                lblTo.innerText = "입고 거점 (도착지):";
+                group1.innerText = "출고"; group2.innerText = "인수";
+                footerMsg.innerText = "상기 원부자재를 이상 없이 정히 영수(인수)하였음을 확인합니다.";
+                signArea.innerHTML = `<span>출고자: ____________ (인)</span><span>인수자: ____________ (인)</span>`;
+            
+            } else if (type === 'TRANSFER_REQ') {
+                mainTitle.innerText = "자 재 이 동 요 청 서";
+                subTitle.innerText = "MATERIAL TRANSFER REQUEST";
+                prefixNo.innerText = "T-REQ";
+                lblFrom.innerText = "현재 보관 위치:";
+                lblTo.innerText = "이동할 목적지:";
+                group1.innerText = "요청"; group2.innerText = "승인";
+                footerMsg.innerText = "현장 작업 및 공정 진행을 위해 상기 자재의 이동을 요청하오니 승인 바랍니다.";
+                signArea.innerHTML = `<span>요청자: ____________ (인)</span><span>승인자: ____________ (인)</span><span>이동처리자: ____________ (인)</span>`;
+            
+            } else if (type === 'DISPENSE_REQ') {
+                mainTitle.innerText = "자 재 불 출 요 청 서";
+                subTitle.innerText = "MATERIAL DISPENSE REQUEST";
+                prefixNo.innerText = "D-REQ";
+                lblFrom.innerText = "요청 부서/현장:";
+                lblTo.innerText = "불출 창고:";
+                group1.innerText = "청구"; group2.innerText = "불출";
+                footerMsg.innerText = "생산 및 작업을 위하여 위와 같이 자재의 불출(청구)을 요청합니다.";
+                signArea.innerHTML = `<span>청구자: ____________ (인)</span><span>불출확인: ____________ (인)</span><span>수령자: ____________ (인)</span>`;
+            
+            } else if (type === 'OUTBOUND_REQ') {
+                mainTitle.innerText = "제 품 출 고 요 청 서";
+                subTitle.innerText = "PRODUCT OUTBOUND REQUEST";
+                prefixNo.innerText = "O-REQ";
+                lblFrom.innerText = "요청 부서(영업):";
+                lblTo.innerText = "출고처(고객사):";
+                group1.innerText = "요청"; group2.innerText = "출하";
+                footerMsg.innerText = "상기 제품/상품에 대하여 고객사 납품을 위한 정식 출고를 요청합니다.";
+                signArea.innerHTML = `<span>영업/요청자: ____________ (인)</span><span>출하승인: ____________ (인)</span><span>출하담당: ____________ (인)</span>`;
+            }
+        }
+        // [수정] 이력 표에서 전표 버튼을 눌렀을 때도 적용
         function openSlipByHistoryId(id) {
             const h = historyDB.find(item => String(item.id) === String(id));
             if (!h) return;
             openTransferSlipModal();
+            
+            const typeSelect = document.getElementById('doc-type-select');
+            // 기록 종류에 따라 문서 기본값 자동 선택
+            if(h.type === 'MOVE') typeSelect.value = 'TRANSFER_SLIP';
+            else if(h.type === 'USE') typeSelect.value = 'DISPENSE_REQ';
+            else if(h.type === 'OUT') typeSelect.value = 'OUTBOUND_REQ';
+            else typeSelect.value = 'TRANSFER_SLIP';
+            
+            updateDocumentUI(); // 바뀐 타입에 맞게 UI 갱신
+
             const today = h.timestamp.split(' ')[0];
             document.getElementById('slip-doc-date').innerText = today;
             document.getElementById('slip-from-loc').innerText = h.fromLoc;
             document.getElementById('slip-to-loc').innerText = h.toLoc;
+            document.getElementById('slip-transport-mode').innerText = h.reason || '-';
             const workerEl = document.getElementById('slip-worker-name');
             if (workerEl) workerEl.innerText = h.worker || currentGlobalWorker || '관리자';
 
@@ -5682,7 +5654,7 @@
                     <td class="py-2 px-3 text-right font-black text-blue-700">${h.qty}</td>
                 </tr>
             `;
-            document.getElementById('slip-total-qty').innerText = `${h.qty} ${m ? m.unit : 'EA'}`;
+            document.getElementById('slip-total-qty').innerText = `${h.qty.toLocaleString()} ${m ? m.unit : 'EA'}`;
         }
 
         function setLedgerCategory(cat) {
