@@ -2727,7 +2727,7 @@
             { category: "부자재", code: "ITEM-1004", name: "고무 실링 가스켓", supplier: "태양실링(주)", spec: "OD 45mm x ID 30mm", location: "김포공장 A동", quantity: 45, unit: "EA", status: "정상 보관", lastUpdated: "2026-09-20 09:10" }
         ];
 
-        let currentGlobalWorker = "홍길동 (관리자)";
+        let currentGlobalWorker = "윤경용 (관리자)";
 
         let stockAuditWorkingMap = {}; // key: `${code}_${location}` -> { actualQty, reason }
 
@@ -2779,7 +2779,13 @@
         let mrpTargetStockDays = 30;
         let mrpCalculatedRows = [];
 
-        function saveStateToStorage() {
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyzbdPNZU1UoicZ_d2SnrvUsU5kiDeJuySUzKCYB9VM40YwiaKelLqUUEuF-8L_-t_gQQ/exec";
+
+        /* =========================================================
+           [수정 2] 구글 시트로 데이터를 실시간 저장하도록 함수 변경
+           ========================================================= */
+        async function saveStateToStorage() {
+            // 만약을 위해 기존 로컬(기기 내부)에도 백업용으로 저장
             try {
                 localStorage.setItem('wms_categories', JSON.stringify(categoriesDB));
                 localStorage.setItem('wms_locations', JSON.stringify(locationsDB));
@@ -2791,13 +2797,73 @@
                 localStorage.setItem('wms_home_widgets', JSON.stringify(homeWidgetsState));
                 localStorage.setItem('wms_global_worker', currentGlobalWorker);
                 localStorage.setItem('wms_users', JSON.stringify(usersDB));
-                localStorage.setItem('wms_current_user_id', currentUser ? currentUser.username : '');
+                if(currentUser) localStorage.setItem('wms_current_user_id', currentUser.username);
             } catch (e) {
                 console.warn("Storage save failed:", e);
             }
+
+            // 전체 데이터를 모아서 구글 시트 백엔드로 전송
+            const payload = {
+                categories: categoriesDB,
+                locations: locationsDB,
+                workers: workersDB,
+                master: masterDB,
+                inventory: inventoryDB,
+                history: historyDB,
+                schedules: schedulesDB,
+                homeWidgets: homeWidgetsState,
+                globalWorker: currentGlobalWorker,
+                users: usersDB
+            };
+
+            if (GAS_URL.startsWith("https://script.google.com")) {
+                try {
+                    // CORS 에러 방지를 위해 text/plain으로 전송
+                    fetch(GAS_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify(payload)
+                    }).catch(err => console.error("구글 시트 동기화 에러:", err));
+                } catch (e) {
+                    console.error("Fetch 요청 에러:", e);
+                }
+            }
         }
 
-        function loadStateFromStorage() {
+        async function loadStateFromStorage() {
+            if (GAS_URL.startsWith("https://script.google.com")) {
+                try {
+                    showToast("구글 시트 서버에서 최신 데이터를 불러오는 중...", "info");
+                    
+                    const response = await fetch(GAS_URL);
+                    const data = await response.json();
+                    
+                    if (data && Object.keys(data).length > 0) {
+                        if (data.categories) categoriesDB = data.categories;
+                        if (data.locations) locationsDB = data.locations;
+                        if (data.workers) workersDB = data.workers;
+                        if (data.master) masterDB = data.master;
+                        if (data.inventory) inventoryDB = data.inventory;
+                        if (data.history) historyDB = data.history;
+                        if (data.schedules) schedulesDB = data.schedules;
+                        if (data.homeWidgets) homeWidgetsState = data.homeWidgets;
+                        if (data.globalWorker) currentGlobalWorker = data.globalWorker;
+                        if (data.users) usersDB = data.users;
+                        
+                        showToast("서버 실시간 동기화 완료!", "success");
+                    }
+                } catch (e) {
+                    console.warn("구글 시트 로딩 실패, 로컬 백업 데이터를 사용합니다:", e);
+                    loadFromLocalFallback();
+                }
+            } else {
+                // URL이 입력되지 않았을 경우 기존 방식 동작
+                loadFromLocalFallback();
+            }
+        }
+
+        // 기존의 로컬 스토리지 불러오기 방식 (오프라인 대비용)
+        function loadFromLocalFallback() {
             try {
                 const c = localStorage.getItem('wms_categories'); if (c) categoriesDB = JSON.parse(c);
                 const l = localStorage.getItem('wms_locations'); if (l) locationsDB = JSON.parse(l);
@@ -2807,12 +2873,8 @@
                 const h = localStorage.getItem('wms_history'); if (h) historyDB = JSON.parse(h);
                 const s = localStorage.getItem('wms_schedules'); if (s) schedulesDB = JSON.parse(s);
                 const w = localStorage.getItem('wms_home_widgets'); if (w) homeWidgetsState = Object.assign(homeWidgetsState, JSON.parse(w));
-                const gw = localStorage.getItem('wms_global_worker'); 
-                if (gw) {
-                    currentGlobalWorker = gw;
-                }
-                const u = localStorage.getItem('wms_users');
-                if (u) usersDB = JSON.parse(u);
+                const gw = localStorage.getItem('wms_global_worker'); if (gw) currentGlobalWorker = gw;
+                const u = localStorage.getItem('wms_users'); if (u) usersDB = JSON.parse(u);
                 const curId = localStorage.getItem('wms_current_user_id');
                 if (curId) {
                     const matchUser = usersDB.find(usr => usr.username === curId);
@@ -2822,7 +2884,23 @@
                 console.warn("Storage load error:", e);
             }
         }
+         /* =========================================================
+           [수정 4] 앱이 처음 실행될 때 데이터 불러오기 자동 시작
+           ========================================================= */
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadStateFromStorage();
+            
+            // 데이터 로드 완료 후 화면 정보 최신화
+            updateAuthHeaderUI();
+            applyRoleRestrictions();
+            populateWorkerSelects();
+            populateCategorySelects();
+            populateLocationSelects();
+            switchTab('home'); // 초기 화면을 홈으로 설정
+        });
 
+        /* ========================================================= */
+        /* 아래부터는 기존의 나머지 코드(openAuthModal 등)가 이어집니다 */
         /* ==================== 사용자 인증 및 권한 제어 (RBAC) 로직 ==================== */
         function openAuthModal(initialTab = 'LOGIN') {
             switchAuthTab(initialTab);
