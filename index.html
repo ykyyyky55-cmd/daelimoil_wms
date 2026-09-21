@@ -2779,19 +2779,10 @@
         let mrpTargetStockDays = 30;
         let mrpCalculatedRows = [];
 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyyqFG1k-5aT74cTrFU1SqTG6GNS92Z-Q416PL0CVv1wtlaH0aW17Z5h-ooBi8elgmqWA/exec";
+        const GAS_URL = "https://wmsdb-95688-default-rtdb.firebaseio.com/wms_data.json";
 
-        /* =========================================================
-           [수정 2] 구글 시트로 데이터를 실시간 저장하도록 함수 변경
-           ========================================================= */
-        /* =========================================================
-           [수정 2] 구글 시트로 데이터를 실시간 저장하도록 함수 변경
-           ========================================================= */
-       /* =========================================================
-           [최종 수정] 구글 시트로 데이터를 무조건 꽂아넣는 강제 저장 함수
-           ========================================================= */
-        async function saveStateToStorage() {
-            // 1. 만약을 위해 내 기기(로컬) 내부에도 백업용으로 동시 저장
+       async function saveStateToStorage() {
+            // 1. 내 기기(로컬) 내부에도 백업용으로 동시 저장
             try {
                 localStorage.setItem('wms_categories', JSON.stringify(categoriesDB));
                 localStorage.setItem('wms_locations', JSON.stringify(locationsDB));
@@ -2804,11 +2795,9 @@
                 localStorage.setItem('wms_global_worker', currentGlobalWorker);
                 localStorage.setItem('wms_users', JSON.stringify(usersDB));
                 if(currentUser) localStorage.setItem('wms_current_user_id', currentUser.username);
-            } catch (e) {
-                console.warn("Storage save failed:", e);
-            }
+            } catch (e) {}
 
-            // 2. 구글 시트로 보낼 전체 데이터 포장
+            // 2. 파이어베이스로 보낼 전체 데이터 포장
             const payloadData = {
                 categories: categoriesDB,
                 locations: locationsDB,
@@ -2822,26 +2811,72 @@
                 users: usersDB
             };
 
-            // 데이터를 문자열로 완벽하게 변환 (에러 방지)
-            const jsonString = JSON.stringify(payloadData);
-
-            // 3. 구글 시트로 강제 전송
-            if (GAS_URL.startsWith("https://script.google.com")) {
-                try {
-                    // ★ CORS 보안을 뚫기 위해 가장 단순한 fetch 방식으로 전송
-                    fetch(GAS_URL, {
-                        method: "POST",
-                        body: jsonString,
-                        // no-cors를 쓰지 않고 헤더 자체를 생략하여 단순 텍스트로 위장 전송
-                    }).then(response => {
-                        console.log("서버 전송 시도 완료");
-                    }).catch(err => {
-                        console.error("전송 에러 발생:", err);
-                    });
-                } catch (e) {
-                    console.error("Fetch 함수 자체 에러:", e);
-                }
+            // 3. 파이어베이스 DB로 실시간 덮어쓰기 (PUT 방식)
+            if (FIREBASE_URL.includes("firebaseio.com")) {
+                fetch(FIREBASE_URL, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payloadData)
+                }).then(() => console.log("Firebase 저장 성공"))
+                  .catch(err => console.error("Firebase 저장 실패:", err));
             }
+        }
+
+        async function loadStateFromStorage() {
+            if (FIREBASE_URL.includes("firebaseio.com")) {
+                try {
+                    showToast("데이터베이스 동기화 중...", "info");
+                    
+                    // 브라우저 캐시 무시
+                    const url = FIREBASE_URL + "?t=" + new Date().getTime();
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (!data) {
+                        showToast("DB가 비어있습니다. 내 데이터를 백업합니다.", "warning");
+                        loadFromLocalFallback();
+                        saveStateToStorage();
+                    } else {
+                        if (data.categories) categoriesDB = data.categories;
+                        if (data.locations) locationsDB = data.locations;
+                        if (data.workers) workersDB = data.workers;
+                        if (data.master) masterDB = data.master;
+                        if (data.inventory) inventoryDB = data.inventory;
+                        if (data.history) historyDB = data.history;
+                        if (data.schedules) schedulesDB = data.schedules;
+                        if (data.homeWidgets) homeWidgetsState = data.homeWidgets;
+                        if (data.globalWorker) currentGlobalWorker = data.globalWorker;
+                        if (data.users) usersDB = data.users;
+                        
+                        showToast("서버 동기화 완료!", "success");
+                    }
+                } catch (e) {
+                    console.error("DB 로딩 실패:", e);
+                    loadFromLocalFallback();
+                }
+            } else {
+                loadFromLocalFallback();
+            }
+        }
+
+        function loadFromLocalFallback() {
+            try {
+                const c = localStorage.getItem('wms_categories'); if (c) categoriesDB = JSON.parse(c);
+                const l = localStorage.getItem('wms_locations'); if (l) locationsDB = JSON.parse(l);
+                const wkr = localStorage.getItem('wms_workers'); if (wkr) workersDB = JSON.parse(wkr);
+                const m = localStorage.getItem('wms_master'); if (m) masterDB = JSON.parse(m);
+                const i = localStorage.getItem('wms_inventory'); if (i) inventoryDB = JSON.parse(i);
+                const h = localStorage.getItem('wms_history'); if (h) historyDB = JSON.parse(h);
+                const s = localStorage.getItem('wms_schedules'); if (s) schedulesDB = JSON.parse(s);
+                const w = localStorage.getItem('wms_home_widgets'); if (w) homeWidgetsState = Object.assign(homeWidgetsState, JSON.parse(w));
+                const gw = localStorage.getItem('wms_global_worker'); if (gw) currentGlobalWorker = gw;
+                const u = localStorage.getItem('wms_users'); if (u) usersDB = JSON.parse(u);
+                const curId = localStorage.getItem('wms_current_user_id');
+                if (curId) {
+                    const matchUser = usersDB.find(usr => usr.username === curId);
+                    if (matchUser) currentUser = matchUser;
+                }
+            } catch (e) {}
         }
         /* =========================================================
            [수정] 캐시 무시 + 빈 시트 자동 동기화 기능이 추가된 로딩 함수
